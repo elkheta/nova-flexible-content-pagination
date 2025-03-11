@@ -25,6 +25,10 @@ class Flexible extends Field
      */
     public $component = 'nova-flexible-content';
 
+    public $initialItemsCount = 5 ;
+    
+    public $paginationCount = 5 ;
+    
     /**
      * The available layouts collection
      *
