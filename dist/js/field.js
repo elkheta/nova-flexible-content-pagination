@@ -910,7 +910,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             return $options.remove(group.key);
           }
         }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove"]);
-      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("a", {
         key: 0,
         onClick: _cache[0] || (_cache[0] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
@@ -1331,11 +1331,16 @@ var Group = /*#__PURE__*/function () {
     value: function values() {
       var formData = new FormData();
       for (var i = 0; i < this.fields.length; i++) {
-        this.fields[i].fill(formData);
+        if (typeof this.fields[i].fill === 'function') {
+          this.fields[i].fill(formData);
+        } else {
+          // Ensure the field is included even if it's hidden
+          var fieldValue = this.fields[i].value || '';
+          formData.append(this.fields[i].attribute, fieldValue);
+        }
       }
       return formData;
     }
-
     /**
      * Retrieve the layout's filled object
      */

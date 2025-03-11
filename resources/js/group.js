@@ -15,14 +15,18 @@ export default class Group {
    */
   values() {
     let formData = new FormData();
-
     for (var i = 0; i < this.fields.length; i++) {
-      this.fields[i].fill(formData);
+        if (typeof this.fields[i].fill === 'function') {
+            this.fields[i].fill(formData);
+        } else {
+            // Ensure the field is included even if it's hidden
+            const fieldValue = this.fields[i].value || '';
+            formData.append(this.fields[i].attribute, fieldValue);
+        }
     }
 
     return formData;
-  }
-
+}
   /**
    * Retrieve the layout's filled object
    */

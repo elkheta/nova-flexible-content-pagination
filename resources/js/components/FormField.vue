@@ -26,13 +26,13 @@
         />
       </div>
 
-      <button
+      <a
         v-if="showLoadMoreButton"
         @click="loadMore"
         class="btn btn-default btn-primary"
       >
         Load More
-      </button>
+    </a>
 
       <component
         :layouts="layouts"
