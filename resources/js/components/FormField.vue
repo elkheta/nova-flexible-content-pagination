@@ -25,14 +25,17 @@
             @remove="remove(group.key)"
         />
       </div>
-
-      <div
-          v-if="showLoadMoreButton"
-          @click="loadMore"
-          class="btn btn-default btn-primary"
-      >
-        Load More
-      </div>
+      <div 
+    v-if="showLoadMoreButton"
+    @click="loadMore"
+    class="load-more-container"
+>
+    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 8l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M6 12l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M6 16l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+</div>
 
       <component
           :layouts="layouts"
@@ -85,7 +88,7 @@ export default {
       }, []);
     },
     visibleGroups() {
-      if(this.hasPagination)
+      if(this.paginate)
       {
         return this.orderedGroups.slice(0, this.visibleCount);
       } else {
@@ -93,7 +96,7 @@ export default {
       }
     },
     showLoadMoreButton() {
-      return this.hasPagination && this.visibleCount < this.orderedGroups.length;
+      return this.paginate && this.visibleCount < this.orderedGroups.length;
     },
     limitCounter() {
       if (
@@ -121,8 +124,8 @@ export default {
         return layoutCounts;
       }, {});
     },
-    hasPagination() {
-      return this.field.hasPagination;
+    paginate() {
+      return this.field.paginate;
     }
   },
 
@@ -320,8 +323,30 @@ export default {
       });
     },
   },
-  mounted(){
-    console.log(this.visibleCount);
-  }
 };
 </script>
+<style>
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.load-more-container:hover {
+    transform: scale(1.1);
+}
+
+.arrow-icon {
+    width: 18px; /* Keeps it compact */
+    height: 24px; /* Enough to fit 3 arrows */
+    stroke: #4A5568; /* ChatGPT-like gray */
+    transition: transform 0.3s ease-in-out;
+}
+
+.load-more-container:active .arrow-icon {
+    transform: translateY(2px); /* Subtle downward movement */
+}
+</style>

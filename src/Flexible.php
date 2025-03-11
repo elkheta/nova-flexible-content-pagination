@@ -128,9 +128,9 @@ class Flexible extends Field
      * @param bool $value Whether to enable pagination.
      * @return Flexible
      */
-    public function hasPagination(bool $value = true): Flexible
+    public function paginate(bool $value = true): Flexible
     {
-        $meta = ['hasPagination' => $value];
+        $meta = ['paginate' => $value];
 
         if ($value) {
             $meta['initialItemsCount'] = $this->initialItemsCount;
