@@ -25,9 +25,15 @@ class Flexible extends Field
      */
     public $component = 'nova-flexible-content';
 
-    public $initialItemsCount = 5 ;
-    
-    public $paginationCount = 5 ;
+    /**
+     * @var int
+     */
+    public int $initialItemsCount = 5 ;
+
+    /**
+     * @var int
+     */
+    public int $paginationCount = 5 ;
     
     /**
      * The available layouts collection
@@ -116,6 +122,65 @@ class Flexible extends Field
         return $this->withMeta(['fullWidth' => true]);
     }
 
+    /**
+     * Enable or disable pagination.
+     *
+     * @param bool $value Whether to enable pagination.
+     * @return Flexible
+     */
+    public function hasPagination(bool $value = true): Flexible
+    {
+        $meta = ['hasPagination' => $value];
+
+        if ($value) {
+            $meta['initialItemsCount'] = $this->initialItemsCount;
+            $meta['paginationCount'] = $this->paginationCount;
+        }
+
+        return $this->withMeta($meta);
+    }
+
+    /**
+     * Get the initial items count.
+     *
+     * @return int Number of initial items.
+     */
+    public function getInitialItemsCount(): int {
+        return $this->initialItemsCount;
+    }
+
+    /**
+     * Set the initial items count.
+     *
+     * @param int $count Number of initial items.
+     * @return Flexible
+     */
+    public function setInitialItemsCount(int $count): Flexible
+    {
+        $this->initialItemsCount = $count;
+        return $this->withMeta(['initialItemsCount' => $count]);
+    }
+
+    /**
+     * Get the pagination count.
+     *
+     * @return int Number of items per pagination step.
+     */
+    public function getPaginationCount(): int {
+        return $this->paginationCount;
+    }
+
+    /**
+     * Set the pagination count.
+     *
+     * @param int $count Number of items per pagination step.
+     * @return Flexible
+     */
+    public function setPaginationCount(int $count): Flexible
+    {
+        $this->paginationCount = $count;
+        return $this->withMeta(['paginationCount' => $count]);
+    }
     /**
      * Make the flexible content take up the full width
      * of the form. Labels will sit above
@@ -224,6 +289,10 @@ class Flexible extends Field
         return $this;
     }
 
+    /**
+     * @param bool $value
+     * @return $this
+     */
     public function collapsed(bool $value = true)
     {
         $this->withMeta(['collapsed' => $value]);
