@@ -886,6 +886,7 @@ __webpack_require__.r(__webpack_exports__);
 var _hoisted_1 = {
   ref: "flexibleFieldContainer"
 };
+var _hoisted_2 = ["title"];
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_form_nova_flexible_content_group = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("form-nova-flexible-content-group");
   return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.fullWidth ? 'FullWidthField' : 'default-field'), {
@@ -919,34 +920,28 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove"]);
       }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
         key: 0,
-        onClick: _cache[0] || (_cache[0] = function () {
+        onClick: _cache[1] || (_cache[1] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
         }),
-        "class": "load-more-container"
-      }, _cache[2] || (_cache[2] = [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("svg", {
-        "class": "arrow-icon",
-        viewBox: "0 0 24 24",
+        "class": "load-more-container cursor-pointer"
+      }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+        "class": "group-control btnborder-gray-200 dark:border-gray-700 w-6 h-6 block",
+        title: _ctx.__('Move down'),
+        onClick: _cache[0] || (_cache[0] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.withModifiers)(function () {
+          return $options.moveDown && $options.moveDown.apply($options, arguments);
+        }, ["prevent"]))
+      }, _cache[3] || (_cache[3] = [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("svg", {
+        xmlns: "http://www.w3.org/2000/svg",
         fill: "none",
-        xmlns: "http://www.w3.org/2000/svg"
+        viewBox: "0 0 24 24",
+        strokeWidth: "{1.5}",
+        stroke: "currentColor",
+        className: "size-4"
       }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("path", {
-        d: "M6 8l6 6 6-6",
-        stroke: "currentColor",
-        "stroke-width": "2",
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round"
-      }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("path", {
-        d: "M6 12l6 6 6-6",
-        stroke: "currentColor",
-        "stroke-width": "2",
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round"
-      }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("path", {
-        d: "M6 16l6 6 6-6",
-        stroke: "currentColor",
-        "stroke-width": "2",
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round"
-      })], -1 /* HOISTED */)]))) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: "M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"
+      })], -1 /* HOISTED */)]), 8 /* PROPS */, _hoisted_2)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
         layouts: $options.layouts,
         field: _ctx.field,
         "limit-counter": $options.limitCounter,
@@ -954,7 +949,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         errors: _ctx.errors,
         "resource-name": _ctx.resourceName,
         "resource-id": _ctx.resourceId,
-        onAddGroup: _cache[1] || (_cache[1] = function ($event) {
+        onAddGroup: _cache[2] || (_cache[2] = function ($event) {
           return $options.addGroup($event);
         })
       }, null, 40 /* PROPS, NEED_HYDRATION */, ["layouts", "field", "limit-counter", "limit-per-layout-counter", "errors", "resource-name", "resource-id"]))];
@@ -1496,7 +1491,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.load-more-container {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    cursor: pointer;\n    padding: 8px;\n    transition: transform 0.2s ease-in-out;\n}\n.load-more-container:hover {\n    transform: scale(1.1);\n}\n.arrow-icon {\n    width: 18px; /* Keeps it compact */\n    height: 24px; /* Enough to fit 3 arrows */\n    stroke: #4A5568; /* ChatGPT-like gray */\n    transition: transform 0.3s ease-in-out;\n}\n.load-more-container:active .arrow-icon {\n    transform: translateY(2px); /* Subtle downward movement */\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.load-more-container {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    cursor: pointer;\n    padding: 8px;\n    transition: transform 0.2s ease-in-out;\n}\n.load-more-container:hover {\n    transform: scale(1.3);\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 

@@ -28,13 +28,17 @@
       <div 
     v-if="showLoadMoreButton"
     @click="loadMore"
-    class="load-more-container"
+    class="load-more-container cursor-pointer"
 >
-    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M6 8l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M6 12l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M6 16l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+<div
+    class="group-control btnborder-gray-200 dark:border-gray-700 w-6 h-6 block"
+    :title="__('Move down')" @click.prevent="moveDown">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
+      stroke="currentColor" className="size-4">
+    <path strokeLinecap="round" strokeLinejoin="round"
+          d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"/>
+</svg>
+</div>
 </div>
 
       <component
@@ -336,17 +340,6 @@ export default {
 }
 
 .load-more-container:hover {
-    transform: scale(1.1);
-}
-
-.arrow-icon {
-    width: 18px; /* Keeps it compact */
-    height: 24px; /* Enough to fit 3 arrows */
-    stroke: #4A5568; /* ChatGPT-like gray */
-    transition: transform 0.3s ease-in-out;
-}
-
-.load-more-container:active .arrow-icon {
-    transform: translateY(2px); /* Subtle downward movement */
+    transform: scale(1.3);
 }
 </style>
