@@ -182,7 +182,11 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       }, []);
     },
     visibleGroups: function visibleGroups() {
-      return this.orderedGroups.slice(0, this.visibleCount);
+      if (this.hasPagination) {
+        return this.orderedGroups.slice(0, this.visibleCount);
+      } else {
+        return this.orderedGroups;
+      }
     },
     showLoadMoreButton: function showLoadMoreButton() {
       return this.hasPagination && this.visibleCount < this.orderedGroups.length;
@@ -289,7 +293,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     getLayout: function getLayout(name) {
       if (!this.layouts) return;
       return this.layouts.find(function (layout) {
-        return layout.name == name;
+        return layout.name === name;
       });
     },
     /**

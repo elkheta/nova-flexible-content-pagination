@@ -85,7 +85,12 @@ export default {
       }, []);
     },
     visibleGroups() {
-      return this.orderedGroups.slice(0, this.visibleCount);
+      if(this.hasPagination)
+      {
+        return this.orderedGroups.slice(0, this.visibleCount);
+      } else {
+        return this.orderedGroups;
+      }
     },
     showLoadMoreButton() {
       return this.hasPagination && this.visibleCount < this.orderedGroups.length;
@@ -226,7 +231,7 @@ export default {
      */
     getLayout(name) {
       if (!this.layouts) return;
-      return this.layouts.find((layout) => layout.name == name);
+      return this.layouts.find((layout) => layout.name === name);
     },
 
     /**
