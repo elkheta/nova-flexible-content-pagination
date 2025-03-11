@@ -88,7 +88,6 @@ export default {
       };
     },
   },
-
   methods: {
     /**
      * Display or hide the layouts choice dropdown if there are multiple layouts

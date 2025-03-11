@@ -1,8 +1,8 @@
 <template>
   <component
-    :dusk="currentField.attribute"
-    :is="currentField.fullWidth ? 'FullWidthField' : 'default-field'"
-    :field="currentField"
+    :dusk="field.attribute"
+    :is="field.fullWidth ? 'FullWidthField' : 'default-field'"
+    :field="field"
     :errors="errors"
     :show-help-text="showHelpText"
     full-width-content
@@ -10,10 +10,10 @@
     <template #field>
       <div ref="flexibleFieldContainer">
         <form-nova-flexible-content-group
-          v-for="(group, groupIndex) in orderedGroups"
-          :dusk="currentField.attribute + '-' + groupIndex"
+          v-for="(group, groupIndex) in visibleGroups"
+          :dusk="field.attribute + '-' + groupIndex"
           :key="group.key"
-          :field="currentField"
+          :field="field"
           :group="group"
           :index="groupIndex"
           :resource-name="resourceName"
@@ -26,10 +26,18 @@
         />
       </div>
 
+      <button
+        v-if="showLoadMoreButton"
+        @click="loadMore"
+        class="btn btn-default btn-primary"
+      >
+        Load More
+      </button>
+
       <component
         :layouts="layouts"
-        :is="currentField.menu.component"
-        :field="currentField"
+        :is="field.menu.component"
+        :field="field"
         :limit-counter="limitCounter"
         :limit-per-layout-counter="limitPerLayoutCounter"
         :errors="errors"
@@ -60,9 +68,19 @@ export default {
 
   components: { FullWidthField },
 
+  data() {
+    return {
+      order: [],
+      groups: {},
+      files: {},
+      sortableInstance: null,
+      visibleCount: this.field.initialItemsCount || 5, // Use this.field instead of this.currentField
+    };
+  },
+
   computed: {
     layouts() {
-      return this.currentField.layouts || false;
+      return this.field.layouts || false;
     },
     orderedGroups() {
       return this.order.reduce((groups, key) => {
@@ -70,18 +88,22 @@ export default {
         return groups;
       }, []);
     },
-
+    visibleGroups() {
+      return this.orderedGroups.slice(0, this.visibleCount);
+    },
+    showLoadMoreButton() {
+      return this.visibleCount < this.orderedGroups.length;
+    },
     limitCounter() {
       if (
-        this.currentField.limit === null ||
-        typeof this.currentField.limit == "undefined"
+        this.field.limit === null ||
+        typeof this.field.limit == "undefined"
       ) {
         return null;
       }
 
-      return this.currentField.limit - Object.keys(this.groups).length;
+      return this.field.limit - Object.keys(this.groups).length;
     },
-
     limitPerLayoutCounter() {
       return this.layouts.reduce((layoutCounts, layout) => {
         if (layout.limit === null) {
@@ -101,23 +123,11 @@ export default {
     },
   },
 
-  data() {
-    return {
-      order: [],
-      groups: {},
-      files: {},
-      sortableInstance: null,
-    };
-  },
-
-  beforeUnmount() {
-    if (this.sortableInstance) {
-      this.sortableInstance.destroy();
-    }
-  },
-
   methods: {
-    /*
+    loadMore() {
+      this.visibleCount += this.field.paginationCount || 5; // Use this.field instead of this.currentField
+    },
+     /*
      * Set the initial, internal value for the field.
      */
     setInitialValue() {
