@@ -167,10 +167,9 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       groups: {},
       files: {},
       sortableInstance: null,
-      visibleCount: this.field.initialItemsCount
+      visibleCount: this.field.initialItemsCount || null // Use this.field instead of this.currentField
     };
   },
-  mounted: function mounted() {},
   computed: {
     layouts: function layouts() {
       return this.field.layouts || false;
@@ -201,7 +200,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           layoutCounts[layout.name] = null;
           return layoutCounts;
         }
-        console.log('Object.values(this.groups)', Object.values(_this2.groups));
         var count = Object.values(_this2.groups).filter(function (group) {
           return group.name === layout.name;
         }).length;
@@ -215,7 +213,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
   },
   methods: {
     loadMore: function loadMore() {
-      this.visibleCount += this.field.paginationCount || null;
+      this.visibleCount += this.field.paginationCount || null; // Use this.field instead of this.currentField
     },
     /*
     * Set the initial, internal value for the field.
@@ -303,12 +301,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       var fields = attributes || JSON.parse(JSON.stringify(layout.fields)),
         group = new _group__WEBPACK_IMPORTED_MODULE_3__["default"](layout.name, layout.title, fields, this.currentField, key, collapsed);
       this.groups[group.key] = group;
-      if (this.hasPagination && this.visibleCount < this.order.length) {
-        this.order.splice(this.visibleCount, 0, group.key);
-        this.visibleCount++;
-      } else {
-        this.order.push(group.key);
-      }
+      this.order.push(group.key);
     },
     /**
      * Move a group up
@@ -362,6 +355,9 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         }
       });
     }
+  },
+  mounted: function mounted() {
+    console.log(this.visibleCount);
   }
 });
 

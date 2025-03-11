@@ -70,12 +70,10 @@ export default {
       groups: {},
       files: {},
       sortableInstance: null,
-      visibleCount: this.field.initialItemsCount,
+      visibleCount: this.field.initialItemsCount || null, // Use this.field instead of this.currentField
     };
   },
 
-  mounted() {
-  },
   computed: {
     layouts() {
       return this.field.layouts || false;
@@ -94,8 +92,8 @@ export default {
     },
     limitCounter() {
       if (
-          this.field.limit === null ||
-          typeof this.field.limit == "undefined"
+        this.field.limit === null ||
+        typeof this.field.limit == "undefined"
       ) {
         return null;
       }
@@ -109,8 +107,6 @@ export default {
 
           return layoutCounts;
         }
-        console.log('Object.values(this.groups)', Object.values(this.groups))
-
         let count = Object.values(this.groups).filter(
             (group) => group.name === layout.name,
         ).length;
@@ -127,11 +123,11 @@ export default {
 
   methods: {
     loadMore() {
-      this.visibleCount += this.field.paginationCount || null;
+      this.visibleCount += this.field.paginationCount || null; // Use this.field instead of this.currentField
     },
-    /*
-    * Set the initial, internal value for the field.
-    */
+     /*
+     * Set the initial, internal value for the field.
+     */
     setInitialValue() {
       this.value = this.currentField.value || [];
       this.files = {};
@@ -161,13 +157,13 @@ export default {
         });
 
         // Attach the files for formData appending
-        this.files = {...this.files, ...group.files};
+        this.files = { ...this.files, ...group.files };
       }
 
       this.appendFieldAttribute(formData, this.currentField.attribute);
       formData.append(
-          this.currentField.attribute,
-          this.value.length ? JSON.stringify(this.value) : "",
+        this.currentField.attribute,
+        this.value.length ? JSON.stringify(this.value) : "",
       );
 
       // Append file uploads
@@ -186,15 +182,15 @@ export default {
 
       if (formData.has("___nova_flexible_content_fields")) {
         registered = JSON.parse(
-            formData.get("___nova_flexible_content_fields"),
+          formData.get("___nova_flexible_content_fields"),
         );
       }
 
       registered.push(attribute);
 
       formData.set(
-          "___nova_flexible_content_fields",
-          JSON.stringify(registered),
+        "___nova_flexible_content_fields",
+        JSON.stringify(registered),
       );
     },
 
@@ -217,10 +213,10 @@ export default {
 
       for (var i = 0; i < this.value.length; i++) {
         this.addGroup(
-            this.getLayout(this.value[i].layout),
-            this.value[i].attributes,
-            this.value[i].key,
-            this.currentField.collapsed,
+          this.getLayout(this.value[i].layout),
+          this.value[i].attributes,
+          this.value[i].key,
+          this.currentField.collapsed,
         );
       }
     },
@@ -238,25 +234,21 @@ export default {
      */
     addGroup(layout, attributes, key, collapsed) {
       if (!layout) return;
+
       collapsed = collapsed || false;
+
       let fields = attributes || JSON.parse(JSON.stringify(layout.fields)),
-          group = new Group(
-              layout.name,
-              layout.title,
-              fields,
-              this.currentField,
-              key,
-              collapsed,
-          );
+        group = new Group(
+          layout.name,
+          layout.title,
+          fields,
+          this.currentField,
+          key,
+          collapsed,
+        );
+
       this.groups[group.key] = group;
-
-      if (this.hasPagination && this.visibleCount < this.order.length) {
-        this.order.splice(this.visibleCount, 0, group.key);
-
-        this.visibleCount++;
-      } else {
-        this.order.push(group.key);
-      }
+      this.order.push(group.key);
     },
 
     /**
@@ -323,5 +315,8 @@ export default {
       });
     },
   },
+  mounted(){
+    console.log(this.visibleCount);
+  }
 };
 </script>
