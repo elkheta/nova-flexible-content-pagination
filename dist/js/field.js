@@ -167,9 +167,10 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       groups: {},
       files: {},
       sortableInstance: null,
-      visibleCount: this.field.initialItemsCount || 5 // Use this.field instead of this.currentField
+      visibleCount: this.field.initialItemsCount
     };
   },
+  mounted: function mounted() {},
   computed: {
     layouts: function layouts() {
       return this.field.layouts || false;
@@ -185,7 +186,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return this.orderedGroups.slice(0, this.visibleCount);
     },
     showLoadMoreButton: function showLoadMoreButton() {
-      return this.visibleCount < this.orderedGroups.length;
+      return this.hasPagination && this.visibleCount < this.orderedGroups.length;
     },
     limitCounter: function limitCounter() {
       if (this.field.limit === null || typeof this.field.limit == "undefined") {
@@ -200,17 +201,21 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           layoutCounts[layout.name] = null;
           return layoutCounts;
         }
+        console.log('Object.values(this.groups)', Object.values(_this2.groups));
         var count = Object.values(_this2.groups).filter(function (group) {
           return group.name === layout.name;
         }).length;
         layoutCounts[layout.name] = layout.limit - count;
         return layoutCounts;
       }, {});
+    },
+    hasPagination: function hasPagination() {
+      return this.field.hasPagination;
     }
   },
   methods: {
     loadMore: function loadMore() {
-      this.visibleCount += this.field.paginationCount || 5; // Use this.field instead of this.currentField
+      this.visibleCount += this.field.paginationCount || null;
     },
     /*
     * Set the initial, internal value for the field.
@@ -298,7 +303,12 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       var fields = attributes || JSON.parse(JSON.stringify(layout.fields)),
         group = new _group__WEBPACK_IMPORTED_MODULE_3__["default"](layout.name, layout.title, fields, this.currentField, key, collapsed);
       this.groups[group.key] = group;
-      this.order.push(group.key);
+      if (this.hasPagination && this.visibleCount < this.order.length) {
+        this.order.splice(this.visibleCount, 0, group.key);
+        this.visibleCount++;
+      } else {
+        this.order.push(group.key);
+      }
     },
     /**
      * Move a group up
@@ -910,7 +920,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             return $options.remove(group.key);
           }
         }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove"]);
-      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("a", {
+      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
         key: 0,
         onClick: _cache[0] || (_cache[0] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
