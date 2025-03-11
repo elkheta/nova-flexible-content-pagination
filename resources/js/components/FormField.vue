@@ -25,22 +25,18 @@
             @remove="remove(group.key)"
         />
       </div>
-      <div 
-    v-if="showLoadMoreButton"
-    @click="loadMore"
-    class="load-more-container cursor-pointer"
->
-<div
-    class="group-control btnborder-gray-200 dark:border-gray-700 w-6 h-6 block"
-    :title="__('Move down')" @click.prevent="moveDown">
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
-      stroke="currentColor" className="size-4">
-    <path strokeLinecap="round" strokeLinejoin="round"
-          d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"/>
-</svg>
-</div>
-</div>
+      <div class="load-more-container">
+        <div
+          v-if="showLoadMoreButton"
+          @click="loadMore"
+          class="btn btn-default btn-primary"
+      >
+        Load More
+      </div>
 
+
+      </div>
+     
       <component
           :layouts="layouts"
           :is="field.menu.component"
@@ -340,6 +336,6 @@ export default {
 }
 
 .load-more-container:hover {
-    transform: scale(1.3);
+    transform: scale(1.1);
 }
 </style>
