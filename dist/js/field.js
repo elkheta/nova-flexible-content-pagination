@@ -181,12 +181,22 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         return groups;
       }, []);
     },
-    visibleGroups: function visibleGroups() {
+    mainGroups: function mainGroups() {
       if (this.paginate) {
         return this.orderedGroups.slice(0, this.visibleCount);
       } else {
         return this.orderedGroups;
       }
+    },
+    lastGroup: function lastGroup() {
+      var totalGroups = this.orderedGroups.length;
+      if (this.paginate && totalGroups > this.visibleCount) {
+        return this.orderedGroups[totalGroups - 1]; // Always return last group
+      }
+      return null; // No last group needed if all are visible
+    },
+    showDividerBeforeLast: function showDividerBeforeLast() {
+      return this.orderedGroups.length > this.visibleCount; // Show divider if hiding items
     },
     showLoadMoreButton: function showLoadMoreButton() {
       return this.paginate && this.visibleCount < this.orderedGroups.length;
@@ -284,7 +294,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.order.splice(0, this.order.length);
       this.groups = {};
       for (var i = 0; i < this.value.length; i++) {
-        this.addGroup(this.getLayout(this.value[i].layout), this.value[i].attributes, this.value[i].key, this.currentField.collapsed);
+        this.addGroup(this.getLayout(this.value[i].layout), this.value[i].attributes, this.value[i].key, this.currentField.collapsed, true);
       }
     },
     /**
@@ -300,12 +310,16 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Append the given layout to flexible content's list
      */
     addGroup: function addGroup(layout, attributes, key, collapsed) {
+      var populate = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
       if (!layout) return;
       collapsed = collapsed || false;
       var fields = attributes || JSON.parse(JSON.stringify(layout.fields)),
         group = new _group__WEBPACK_IMPORTED_MODULE_3__["default"](layout.name, layout.title, fields, this.currentField, key, collapsed);
       this.groups[group.key] = group;
       this.order.push(group.key);
+      if (!populate) {
+        this.visibleCount++;
+      }
     },
     /**
      * Move a group up
@@ -889,6 +903,10 @@ var _hoisted_1 = {
 var _hoisted_2 = {
   "class": "load-more-container"
 };
+var _hoisted_3 = {
+  key: 0,
+  "class": "last-divider"
+};
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_form_nova_flexible_content_group = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("form-nova-flexible-content-group");
   return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.fullWidth ? 'FullWidthField' : 'default-field'), {
@@ -899,7 +917,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     "full-width-content": ""
   }, {
     field: (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
-      return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_1, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.visibleGroups, function (group, groupIndex) {
+      return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_1, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.mainGroups, function (group, groupIndex) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
           dusk: _ctx.field.attribute + '-' + groupIndex,
           key: group.key,
@@ -926,7 +944,26 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
         }),
         "class": "btn btn-default btn-primary"
-      }, " Load More ")) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
+      }, " Load More ")) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), $options.showDividerBeforeLast ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("hr", _hoisted_3)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.lastGroup ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
+        dusk: _ctx.field.attribute + '-last',
+        key: $options.lastGroup.key,
+        field: _ctx.field,
+        group: $options.lastGroup,
+        index: $options.orderedGroups.length - 1,
+        "resource-name": _ctx.resourceName,
+        "resource-id": _ctx.resourceId,
+        errors: _ctx.errors,
+        mode: _ctx.mode,
+        onMoveUp: _cache[1] || (_cache[1] = function ($event) {
+          return $options.moveUp($options.lastGroup.key);
+        }),
+        onMoveDown: _cache[2] || (_cache[2] = function ($event) {
+          return $options.moveDown($options.lastGroup.key);
+        }),
+        onRemove: _cache[3] || (_cache[3] = function ($event) {
+          return $options.remove($options.lastGroup.key);
+        })
+      }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
         layouts: $options.layouts,
         field: _ctx.field,
         "limit-counter": $options.limitCounter,
@@ -934,7 +971,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         errors: _ctx.errors,
         "resource-name": _ctx.resourceName,
         "resource-id": _ctx.resourceId,
-        onAddGroup: _cache[1] || (_cache[1] = function ($event) {
+        onAddGroup: _cache[4] || (_cache[4] = function ($event) {
           return $options.addGroup($event);
         })
       }, null, 40 /* PROPS, NEED_HYDRATION */, ["layouts", "field", "limit-counter", "limit-per-layout-counter", "errors", "resource-name", "resource-id"]))];

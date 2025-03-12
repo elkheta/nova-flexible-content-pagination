@@ -10,7 +10,7 @@
     <template #field>
       <div ref="flexibleFieldContainer">
         <form-nova-flexible-content-group
-            v-for="(group, groupIndex) in visibleGroups"
+            v-for="(group, groupIndex) in mainGroups"
             :dusk="field.attribute + '-' + groupIndex"
             :key="group.key"
             :field="field"
@@ -36,7 +36,24 @@
 
 
       </div>
-     
+
+      <hr v-if="showDividerBeforeLast" class="last-divider" />
+      <form-nova-flexible-content-group
+    v-if="lastGroup"
+    :dusk="field.attribute + '-last'"
+    :key="lastGroup.key"
+    :field="field"
+    :group="lastGroup"
+    :index="orderedGroups.length - 1"
+    :resource-name="resourceName"
+    :resource-id="resourceId"
+    :errors="errors"
+    :mode="mode"
+    @move-up="moveUp(lastGroup.key)"
+    @move-down="moveDown(lastGroup.key)"
+    @remove="remove(lastGroup.key)"
+  />
+   
       <component
           :layouts="layouts"
           :is="field.menu.component"
@@ -87,14 +104,28 @@ export default {
         return groups;
       }, []);
     },
-    visibleGroups() {
-      if(this.paginate)
+    mainGroups() {
+    if(this.paginate)
       {
         return this.orderedGroups.slice(0, this.visibleCount);
       } else {
         return this.orderedGroups;
       }
-    },
+  },
+
+  lastGroup() {
+    let totalGroups = this.orderedGroups.length;
+    if (this.paginate && (totalGroups > this.visibleCount)) {
+      return this.orderedGroups[totalGroups - 1]; // Always return last group
+    }
+
+    return null; // No last group needed if all are visible
+  },
+
+  showDividerBeforeLast() {
+  
+    return this.orderedGroups.length > this.visibleCount; // Show divider if hiding items
+  },
     showLoadMoreButton() {
       return this.paginate && this.visibleCount < this.orderedGroups.length;
     },
@@ -225,6 +256,7 @@ export default {
           this.value[i].attributes,
           this.value[i].key,
           this.currentField.collapsed,
+          true
         );
       }
     },
@@ -240,7 +272,7 @@ export default {
     /**
      * Append the given layout to flexible content's list
      */
-    addGroup(layout, attributes, key, collapsed) {
+    addGroup(layout, attributes, key, collapsed, populate = false) {
       if (!layout) return;
 
       collapsed = collapsed || false;
@@ -257,7 +289,11 @@ export default {
 
       this.groups[group.key] = group;
       this.order.push(group.key);
+      if(!populate){
+        this.visibleCount ++;
+      }
     },
+    
 
     /**
      * Move a group up
