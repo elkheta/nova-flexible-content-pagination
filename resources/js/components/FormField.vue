@@ -1,70 +1,30 @@
 <template>
-  <component
-      :dusk="field.attribute"
-      :is="field.fullWidth ? 'FullWidthField' : 'default-field'"
-      :field="field"
-      :errors="errors"
-      :show-help-text="showHelpText"
-      full-width-content
-  >
+  <component :dusk="field.attribute" :is="field.fullWidth ? 'FullWidthField' : 'default-field'" :field="field"
+    :errors="errors" :show-help-text="showHelpText" full-width-content>
     <template #field>
       <div ref="flexibleFieldContainer">
-        <form-nova-flexible-content-group
-            v-for="(group, groupIndex) in mainGroups"
-            :dusk="field.attribute + '-' + groupIndex"
-            :key="group.key"
-            :field="field"
-            :group="group"
-            :index="groupIndex"
-            :resource-name="resourceName"
-            :resource-id="resourceId"
-            :errors="errors"
-            :mode="mode"
-            @move-up="moveUp(group.key)"
-            @move-down="moveDown(group.key)"
-            @remove="remove(group.key)"
-        />
+        <form-nova-flexible-content-group v-for="(group, groupIndex) in mainGroups"
+          :dusk="field.attribute + '-' + groupIndex" :key="group.key" :field="field" :group="group" :index="groupIndex"
+          :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
+          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" />
       </div>
-      <div class="load-more-container"  v-if="showLoadMoreButton">
-        <div
-         
-          @click="loadMore"
-          class="btn btn-default btn-primary"
-      >
-        Load More
-      </div>
+      <div class="load-more-container" v-if="showLoadMoreButton">
+        <div @click="loadMore" class="btn btn-default btn-primary">
+          Load More
+        </div>
 
 
       </div>
 
       <hr v-if="showDividerBeforeLast" class="last-divider mb-3" />
-      <form-nova-flexible-content-group
-    v-if="lastGroup"
-    :dusk="field.attribute + '-last'"
-    :key="lastGroup.key"
-    :field="field"
-    :group="lastGroup"
-    :index="orderedGroups.length - 1"
-    :resource-name="resourceName"
-    :resource-id="resourceId"
-    :errors="errors"
-    :mode="mode"
-    @move-up="moveUp(lastGroup.key)"
-    @move-down="moveDown(lastGroup.key)"
-    @remove="remove(lastGroup.key)"
-  />
-   
-      <component
-          :layouts="layouts"
-          :is="field.menu.component"
-          :field="field"
-          :limit-counter="limitCounter"
-          :limit-per-layout-counter="limitPerLayoutCounter"
-          :errors="errors"
-          :resource-name="resourceName"
-          :resource-id="resourceId"
-          @addGroup="addGroup($event)"
-      />
+      <form-nova-flexible-content-group v-if="lastGroup" :dusk="field.attribute + '-last'" :key="lastGroup.key"
+        :field="field" :group="lastGroup" :index="orderedGroups.length - 1" :resource-name="resourceName"
+        :resource-id="resourceId" :errors="errors" :mode="mode" @move-up="moveUp(lastGroup.key)"
+        @move-down="moveDown(lastGroup.key)" @remove="remove(lastGroup.key)" />
+
+      <component :layouts="layouts" :is="field.menu.component" :field="field" :limit-counter="limitCounter"
+        :limit-per-layout-counter="limitPerLayoutCounter" :errors="errors" :resource-name="resourceName"
+        :resource-id="resourceId" @addGroup="addGroup($event)" />
     </template>
   </component>
 </template>
@@ -72,7 +32,7 @@
 <script>
 import FullWidthField from "./FullWidthField";
 import Sortable from "sortablejs";
-import {DependentFormField, HandlesValidationErrors, mapProps,} from "laravel-nova";
+import { DependentFormField, HandlesValidationErrors, mapProps, } from "laravel-nova";
 import Group from "../group";
 
 export default {
@@ -82,7 +42,7 @@ export default {
     ...mapProps(["resourceName", "resourceId", "mode"]),
   },
 
-  components: {FullWidthField},
+  components: { FullWidthField },
 
   data() {
     return {
@@ -105,26 +65,25 @@ export default {
       }, []);
     },
     mainGroups() {
-    if(this.paginate)
-      {
+      if (this.paginate) {
         return this.orderedGroups.slice(0, this.visibleCount);
       } else {
         return this.orderedGroups;
       }
-  },
+    },
 
-  lastGroup() {
-    let totalGroups = this.orderedGroups.length;
-    if (this.paginate && (totalGroups > this.visibleCount)) {
-      return this.orderedGroups[totalGroups - 1]; // Always return last group
-    }
+    lastGroup() {
+      let totalGroups = this.orderedGroups.length;
+      if (this.paginate && (totalGroups > this.visibleCount)) {
+        return this.orderedGroups[totalGroups - 1]; // Always return last group
+      }
 
-    return null; // No last group needed if all are visible
-  },
+      return null; // No last group needed if all are visible
+    },
 
-  showDividerBeforeLast() {
-    return this.orderedGroups.length >  this.visibleCount + 1; // Show divider if hiding items
-  },
+    showDividerBeforeLast() {
+      return this.orderedGroups.length > this.visibleCount + 1; // Show divider if hiding items
+    },
     showLoadMoreButton() {
       return this.paginate && (this.visibleCount + 1 < this.orderedGroups.length);
     },
@@ -146,7 +105,7 @@ export default {
           return layoutCounts;
         }
         let count = Object.values(this.groups).filter(
-            (group) => group.name === layout.name,
+          (group) => group.name === layout.name,
         ).length;
 
         layoutCounts[layout.name] = layout.limit - count;
@@ -163,9 +122,9 @@ export default {
     loadMore() {
       this.visibleCount += this.field.paginationCount || null; // Use this.field instead of this.currentField
     },
-     /*
-     * Set the initial, internal value for the field.
-     */
+    /*
+    * Set the initial, internal value for the field.
+    */
     setInitialValue() {
       this.value = this.currentField.value || [];
       this.files = {};
@@ -288,11 +247,11 @@ export default {
 
       this.groups[group.key] = group;
       this.order.push(group.key);
-      if(this.paginate && !populate){
-        this.visibleCount ++;
+      if (this.paginate && !populate) {
+        this.visibleCount++;
       }
     },
-    
+
 
     /**
      * Move a group up
@@ -362,15 +321,15 @@ export default {
 </script>
 <style>
 .load-more-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    padding: 8px;
-    transition: transform 0.2s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px;
+  transition: transform 0.2s ease-in-out;
 }
 
 .load-more-container:hover {
-    transform: scale(1.1);
+  transform: scale(1.1);
 }
 </style>
