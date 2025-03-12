@@ -145,6 +145,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var laravel_nova__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! laravel-nova */ "laravel-nova");
 /* harmony import */ var laravel_nova__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(laravel_nova__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _group__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../group */ "./resources/js/group.js");
+/* harmony import */ var _vueform_multiselect__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @vueform/multiselect */ "./node_modules/@vueform/multiselect/dist/multiselect.mjs");
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
@@ -155,11 +156,13 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
 
 
 
+
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   mixins: [laravel_nova__WEBPACK_IMPORTED_MODULE_2__.HandlesValidationErrors, laravel_nova__WEBPACK_IMPORTED_MODULE_2__.DependentFormField],
   props: _objectSpread({}, (0,laravel_nova__WEBPACK_IMPORTED_MODULE_2__.mapProps)(["resourceName", "resourceId", "mode"])),
   components: {
-    FullWidthField: _FullWidthField__WEBPACK_IMPORTED_MODULE_0__["default"]
+    FullWidthField: _FullWidthField__WEBPACK_IMPORTED_MODULE_0__["default"],
+    Multiselect: _vueform_multiselect__WEBPACK_IMPORTED_MODULE_4__["default"]
   },
   data: function data() {
     return {
@@ -167,17 +170,37 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       groups: {},
       files: {},
       sortableInstance: null,
-      visibleCount: this.field.initialItemsCount || null // Use this.field instead of this.currentField
+      visibleCount: this.field.initialItemsCount || null,
+      selectedTerm: null,
+      availableTerms: [{
+        value: "ALL",
+        label: "All"
+      }, {
+        value: "FIRST_TERM",
+        label: "First Term"
+      }, {
+        value: "SECOND_TERM",
+        label: "Second Term"
+      }]
     };
   },
   computed: {
     layouts: function layouts() {
       return this.field.layouts || false;
     },
-    orderedGroups: function orderedGroups() {
+    filteredGroups: function filteredGroups() {
       var _this = this;
+      if (!this.hasActiveTermFilter) {
+        return this.mainGroups;
+      }
+      return this.selectedTerm ? this.mainGroups.filter(function (group) {
+        return _this.matchesSelectedTerm(group);
+      }) : this.mainGroups;
+    },
+    orderedGroups: function orderedGroups() {
+      var _this2 = this;
       return this.order.reduce(function (groups, key) {
-        groups.push(_this.groups[key]);
+        groups.push(_this2.groups[key]);
         return groups;
       }, []);
     },
@@ -208,13 +231,13 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return this.field.limit - Object.keys(this.groups).length;
     },
     limitPerLayoutCounter: function limitPerLayoutCounter() {
-      var _this2 = this;
+      var _this3 = this;
       return this.layouts.reduce(function (layoutCounts, layout) {
         if (layout.limit === null) {
           layoutCounts[layout.name] = null;
           return layoutCounts;
         }
-        var count = Object.values(_this2.groups).filter(function (group) {
+        var count = Object.values(_this3.groups).filter(function (group) {
           return group.name === layout.name;
         }).length;
         layoutCounts[layout.name] = layout.limit - count;
@@ -223,11 +246,29 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     },
     paginate: function paginate() {
       return this.field.paginate;
+    },
+    hasActiveTermFilter: function hasActiveTermFilter() {
+      return false;
+    }
+  },
+  watch: {
+    selectedTerm: function selectedTerm() {
+      this.$forceUpdate();
     }
   },
   methods: {
     loadMore: function loadMore() {
-      this.visibleCount += this.field.paginationCount || null; // Use this.field instead of this.currentField
+      this.visibleCount += this.field.paginationCount || null;
+    },
+    matchesSelectedTerm: function matchesSelectedTerm(group) {
+      var term = this.extractGroupTerm(group);
+      return term === this.selectedTerm;
+    },
+    extractGroupTerm: function extractGroupTerm(group) {
+      var _group$fields$find;
+      return (_group$fields$find = group.fields.find(function (f) {
+        return f.attribute.endsWith('__course_heading_active_term');
+      })) === null || _group$fields$find === void 0 ? void 0 : _group$fields$find.value;
     },
     /*
     * Set the initial, internal value for the field.
@@ -319,6 +360,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.order.push(group.key);
       if (this.paginate && !populate) {
         this.visibleCount++;
+        this.selectedTerm = null;
       }
     },
     /**
@@ -347,7 +389,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       delete this.groups[key];
     },
     initSortable: function initSortable() {
-      var _this3 = this;
+      var _this4 = this;
       var containerRef = this.$refs["flexibleFieldContainer"];
       if (!containerRef || this.sortableInstance) {
         return;
@@ -366,9 +408,9 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           var oldIndex = evt.oldIndex;
           var newIndex = evt.newIndex;
           if (newIndex < oldIndex) {
-            _this3.moveUp(key);
+            _this4.moveUp(key);
           } else if (newIndex > oldIndex) {
-            _this3.moveDown(key);
+            _this4.moveDown(key);
           }
         }
       });
@@ -898,17 +940,22 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(vue__WEBPACK_IMPORTED_MODULE_0__);
 
 var _hoisted_1 = {
-  ref: "flexibleFieldContainer"
+  key: 0,
+  "class": "flexible-search-menu-multiselect"
 };
 var _hoisted_2 = {
-  key: 0,
-  "class": "load-more-container"
+  ref: "flexibleFieldContainer"
 };
 var _hoisted_3 = {
   key: 1,
+  "class": "load-more-container"
+};
+var _hoisted_4 = {
+  key: 2,
   "class": "last-divider mb-3"
 };
 function render(_ctx, _cache, $props, $setup, $data, $options) {
+  var _component_Multiselect = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("Multiselect");
   var _component_form_nova_flexible_content_group = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("form-nova-flexible-content-group");
   return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.fullWidth ? 'FullWidthField' : 'default-field'), {
     dusk: _ctx.field.attribute,
@@ -918,7 +965,16 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     "full-width-content": ""
   }, {
     field: (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
-      return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_1, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.mainGroups, function (group, groupIndex) {
+      return [$options.hasActiveTermFilter ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_1, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_Multiselect, {
+        modelValue: $data.selectedTerm,
+        "onUpdate:modelValue": _cache[0] || (_cache[0] = function ($event) {
+          return $data.selectedTerm = $event;
+        }),
+        options: $data.availableTerms,
+        placeholder: "Filter by Active Term",
+        "track-by": "value",
+        searchable: true
+      }, null, 8 /* PROPS */, ["modelValue", "options"])])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_2, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.mainGroups, function (group, groupIndex) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
           dusk: _ctx.field.attribute + '-' + groupIndex,
           key: group.key,
@@ -939,12 +995,12 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             return $options.remove(group.key);
           }
         }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove"]);
-      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_2, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
-        onClick: _cache[0] || (_cache[0] = function () {
+      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_3, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+        onClick: _cache[1] || (_cache[1] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
         }),
         "class": "btn btn-default btn-primary"
-      }, " Load More ")])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.showDividerBeforeLast ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("hr", _hoisted_3)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.lastGroup ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
+      }, " Load More ")])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.showDividerBeforeLast ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("hr", _hoisted_4)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.lastGroup ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
         dusk: _ctx.field.attribute + '-last',
         key: $options.lastGroup.key,
         field: _ctx.field,
@@ -954,13 +1010,13 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         "resource-id": _ctx.resourceId,
         errors: _ctx.errors,
         mode: _ctx.mode,
-        onMoveUp: _cache[1] || (_cache[1] = function ($event) {
+        onMoveUp: _cache[2] || (_cache[2] = function ($event) {
           return $options.moveUp($options.lastGroup.key);
         }),
-        onMoveDown: _cache[2] || (_cache[2] = function ($event) {
+        onMoveDown: _cache[3] || (_cache[3] = function ($event) {
           return $options.moveDown($options.lastGroup.key);
         }),
-        onRemove: _cache[3] || (_cache[3] = function ($event) {
+        onRemove: _cache[4] || (_cache[4] = function ($event) {
           return $options.remove($options.lastGroup.key);
         })
       }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
@@ -971,7 +1027,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         errors: _ctx.errors,
         "resource-name": _ctx.resourceName,
         "resource-id": _ctx.resourceId,
-        onAddGroup: _cache[4] || (_cache[4] = function ($event) {
+        onAddGroup: _cache[5] || (_cache[5] = function ($event) {
           return $options.addGroup($event);
         })
       }, null, 40 /* PROPS, NEED_HYDRATION */, ["layouts", "field", "limit-counter", "limit-per-layout-counter", "errors", "resource-name", "resource-id"]))];
@@ -1472,6 +1528,30 @@ var Group = /*#__PURE__*/function () {
 
 /***/ }),
 
+/***/ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss":
+/*!***********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss ***!
+  \***********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../node_modules/css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
+/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__);
+// Imports
+
+var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
+// Module
+___CSS_LOADER_EXPORT___.push([module.id, ".multiselect {\n  position: relative;\n  margin: 0 auto;\n  width: 100%;\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  box-sizing: border-box;\n  cursor: pointer;\n  outline: none;\n  border: var(--ms-border-width, 1px) solid var(--ms-border-color, #D1D5DB);\n  border-radius: var(--ms-radius, 4px);\n  background: var(--ms-bg, #FFFFFF);\n  font-size: var(--ms-font-size, 1rem);\n  min-height: calc(2 * var(--ms-border-width, 1px) + var(--ms-font-size, 1rem) * var(--ms-line-height, 1.375) + 2 * var(--ms-py, 0.5rem));\n}\n.multiselect.is-open {\n  border-radius: var(--ms-radius, 4px) var(--ms-radius, 4px) 0 0;\n}\n.multiselect.is-open-top {\n  border-radius: 0 0 var(--ms-radius, 4px) var(--ms-radius, 4px);\n}\n.multiselect.is-disabled {\n  cursor: default;\n  background: var(--ms-bg-disabled, #F3F4F6);\n}\n.multiselect.is-active {\n  border: var(--ms-border-width-active, var(--ms-border-width, 1px)) solid var(--ms-border-color-active, var(--ms-border-color, #D1D5DB));\n  box-shadow: 0 0 0 var(--ms-ring-width, 3px) var(--ms-ring-color, rgba(16, 185, 129, 0.1882352941));\n}\n.multiselect-wrapper {\n  position: relative;\n  margin: 0 auto;\n  width: 100%;\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  box-sizing: border-box;\n  cursor: pointer;\n  outline: none;\n  min-height: calc(2 * var(--ms-border-width, 1px) + var(--ms-font-size, 1rem) * var(--ms-line-height, 1.375) + 2 * var(--ms-py, 0.5rem));\n}\n.multiselect-multiple-label,\n.multiselect-single-label,\n.multiselect-placeholder {\n  display: flex;\n  align-items: center;\n  height: 100%;\n  position: absolute;\n  left: 0;\n  top: 0;\n  pointer-events: none;\n  background: transparent;\n  line-height: var(--ms-line-height, 1.375);\n  padding-left: var(--ms-px, 0.875rem);\n  padding-right: calc(1.25rem + var(--ms-px, 0.875rem) * 3);\n  box-sizing: border-box;\n  max-width: 100%;\n}\n.multiselect-placeholder {\n  color: var(--ms-placeholder-color, #9CA3AF);\n}\n.multiselect-single-label-text {\n  overflow: hidden;\n  display: block;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n  max-width: 100%;\n}\n.multiselect-search {\n  width: 100%;\n  height: 100%;\n  position: absolute;\n  top: 0px;\n  bottom: 0px;\n  left: 0px;\n  right: 0px;\n  outline: none;\n  box-sizing: border-box;\n  border: 0;\n  -webkit-appearance: none;\n     -moz-appearance: none;\n          appearance: none;\n  font-size: inherit;\n  font-family: inherit;\n  background: var(--ms-bg, #FFFFFF);\n  border-radius: var(--ms-radius, 4px);\n  padding-left: var(--ms-px, 0.875rem);\n}\n.multiselect-search::-webkit-search-decoration, .multiselect-search::-webkit-search-cancel-button, .multiselect-search::-webkit-search-results-button, .multiselect-search::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n}\n.multiselect-tags {\n  flex-grow: 1;\n  flex-shrink: 1;\n  display: flex;\n  flex-wrap: wrap;\n  margin: var(--ms-tag-my, 0.25rem) 0 0;\n  padding-left: var(--ms-py, 0.5rem);\n  align-items: center;\n  min-width: 0;\n}\n.multiselect-tag {\n  background: var(--ms-tag-bg, #10B981);\n  color: var(--ms-tag-color, #FFFFFF);\n  font-size: var(--ms-tag-font-size, 0.875rem);\n  line-height: var(--ms-tag-line-height, 1.25rem);\n  font-weight: var(--ms-tag-font-weight, 600);\n  padding: var(--ms-tag-py, 0.125rem) 0 var(--ms-tag-py, 0.125rem) var(--ms-tag-px, 0.5rem);\n  border-radius: var(--ms-tag-radius, 4px);\n  margin-right: var(--ms-tag-mx, 0.25rem);\n  margin-bottom: var(--ms-tag-my, 0.25rem);\n  display: flex;\n  align-items: center;\n  white-space: nowrap;\n  min-width: 0;\n}\n.multiselect-tag.is-disabled {\n  padding-right: var(--ms-tag-px, 0.5rem);\n  background: var(--ms-tag-bg-disabled, #9CA3AF);\n  color: var(--ms-tag-color-disabled, #FFFFFF);\n}\n.multiselect-tag-wrapper {\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.multiselect-tag-wrapper-break {\n  white-space: normal;\n  word-break: break-all;\n}\n.multiselect-tag-remove {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: var(--ms-tag-remove-py, 0.25rem) var(--ms-tag-remove-px, 0.25rem);\n  margin: var(--ms-tag-remove-my, 0rem) var(--ms-tag-remove-mx, 0.125rem);\n  border-radius: var(--ms-tag-remove-radius, 4px);\n}\n.multiselect-tag-remove:hover {\n  background: rgba(0, 0, 0, 0.062745098);\n}\n.multiselect-tag-remove-icon {\n  -webkit-mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M207.6 256l107.72-107.72c6.23-6.23 6.23-16.34 0-22.58l-25.03-25.03c-6.23-6.23-16.34-6.23-22.58 0L160 208.4 52.28 100.68c-6.23-6.23-16.34-6.23-22.58 0L4.68 125.7c-6.23 6.23-6.23 16.34 0 22.58L112.4 256 4.68 363.72c-6.23 6.23-6.23 16.34 0 22.58l25.03 25.03c6.23 6.23 16.34 6.23 22.58 0L160 303.6l107.72 107.72c6.23 6.23 16.34 6.23 22.58 0l25.03-25.03c6.23-6.23 6.23-16.34 0-22.58L207.6 256z'%3E%3C/path%3E%3C/svg%3E\");\n  mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M207.6 256l107.72-107.72c6.23-6.23 6.23-16.34 0-22.58l-25.03-25.03c-6.23-6.23-16.34-6.23-22.58 0L160 208.4 52.28 100.68c-6.23-6.23-16.34-6.23-22.58 0L4.68 125.7c-6.23 6.23-6.23 16.34 0 22.58L112.4 256 4.68 363.72c-6.23 6.23-6.23 16.34 0 22.58l25.03 25.03c6.23 6.23 16.34 6.23 22.58 0L160 303.6l107.72 107.72c6.23 6.23 16.34 6.23 22.58 0l25.03-25.03c6.23-6.23 6.23-16.34 0-22.58L207.6 256z'%3E%3C/path%3E%3C/svg%3E\");\n  -webkit-mask-position: center;\n  mask-position: center;\n  -webkit-mask-repeat: no-repeat;\n  mask-repeat: no-repeat;\n  -webkit-mask-size: contain;\n  mask-size: contain;\n  background-color: currentColor;\n  opacity: 0.8;\n  display: inline-block;\n  width: 0.75rem;\n  height: 0.75rem;\n}\n.multiselect-tags-search-wrapper {\n  display: inline-block;\n  position: relative;\n  margin: 0 var(--ms-tag-mx, 4px) var(--ms-tag-my, 4px);\n  flex-grow: 1;\n  flex-shrink: 1;\n  height: 100%;\n}\n.multiselect-tags-search-copy {\n  visibility: hidden;\n  white-space: pre-wrap;\n  display: inline-block;\n  height: 1px;\n  width: 100%;\n}\n.multiselect-tags-search {\n  position: absolute;\n  left: 0;\n  right: 0;\n  top: 0;\n  bottom: 0;\n  border: 0;\n  -webkit-appearance: none;\n     -moz-appearance: none;\n          appearance: none;\n  outline: none;\n  padding: 0;\n  font-size: inherit;\n  font-family: inherit;\n  box-sizing: border-box;\n  width: 100%;\n  appearance: none;\n}\n.multiselect-tags-search::-webkit-search-decoration, .multiselect-tags-search::-webkit-search-cancel-button, .multiselect-tags-search::-webkit-search-results-button, .multiselect-tags-search::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n}\n.multiselect-inifite {\n  display: flex;\n  width: 100%;\n  justify-content: center;\n  align-items: center;\n  min-height: calc(2 * var(--ms-border-width, 1px) + var(--ms-font-size, 1rem) * var(--ms-line-height, 1.375) + 2 * var(--ms-py, 0.5rem));\n}\n.multiselect-spinner,\n.multiselect-inifite-spinner {\n  -webkit-mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 512 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M456.433 371.72l-27.79-16.045c-7.192-4.152-10.052-13.136-6.487-20.636 25.82-54.328 23.566-118.602-6.768-171.03-30.265-52.529-84.802-86.621-144.76-91.424C262.35 71.922 256 64.953 256 56.649V24.56c0-9.31 7.916-16.609 17.204-15.96 81.795 5.717 156.412 51.902 197.611 123.408 41.301 71.385 43.99 159.096 8.042 232.792-4.082 8.369-14.361 11.575-22.424 6.92z'%3E%3C/path%3E%3C/svg%3E\");\n  mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 512 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M456.433 371.72l-27.79-16.045c-7.192-4.152-10.052-13.136-6.487-20.636 25.82-54.328 23.566-118.602-6.768-171.03-30.265-52.529-84.802-86.621-144.76-91.424C262.35 71.922 256 64.953 256 56.649V24.56c0-9.31 7.916-16.609 17.204-15.96 81.795 5.717 156.412 51.902 197.611 123.408 41.301 71.385 43.99 159.096 8.042 232.792-4.082 8.369-14.361 11.575-22.424 6.92z'%3E%3C/path%3E%3C/svg%3E\");\n  -webkit-mask-position: center;\n  mask-position: center;\n  -webkit-mask-repeat: no-repeat;\n  mask-repeat: no-repeat;\n  -webkit-mask-size: contain;\n  mask-size: contain;\n  background-color: var(--ms-spinner-color, #10B981);\n  width: 1rem;\n  height: 1rem;\n  z-index: 10;\n  animation: multiselect-spin 1s linear infinite;\n  flex-shrink: 0;\n  flex-grow: 0;\n}\n.multiselect-spinner {\n  margin: 0 var(--ms-px, 0.875rem) 0 0;\n}\n.multiselect-clear {\n  padding: 0 var(--ms-px, 0.875rem) 0 0px;\n  position: relative;\n  z-index: 10;\n  opacity: 1;\n  transition: 0.3s;\n  flex-shrink: 0;\n  flex-grow: 0;\n  display: flex;\n}\n.multiselect-clear:hover .multiselect-clear-icon {\n  background-color: var(--ms-clear-color-hover, #000000);\n}\n.multiselect-clear-icon {\n  -webkit-mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M207.6 256l107.72-107.72c6.23-6.23 6.23-16.34 0-22.58l-25.03-25.03c-6.23-6.23-16.34-6.23-22.58 0L160 208.4 52.28 100.68c-6.23-6.23-16.34-6.23-22.58 0L4.68 125.7c-6.23 6.23-6.23 16.34 0 22.58L112.4 256 4.68 363.72c-6.23 6.23-6.23 16.34 0 22.58l25.03 25.03c6.23 6.23 16.34 6.23 22.58 0L160 303.6l107.72 107.72c6.23 6.23 16.34 6.23 22.58 0l25.03-25.03c6.23-6.23 6.23-16.34 0-22.58L207.6 256z'%3E%3C/path%3E%3C/svg%3E\");\n  mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M207.6 256l107.72-107.72c6.23-6.23 6.23-16.34 0-22.58l-25.03-25.03c-6.23-6.23-16.34-6.23-22.58 0L160 208.4 52.28 100.68c-6.23-6.23-16.34-6.23-22.58 0L4.68 125.7c-6.23 6.23-6.23 16.34 0 22.58L112.4 256 4.68 363.72c-6.23 6.23-6.23 16.34 0 22.58l25.03 25.03c6.23 6.23 16.34 6.23 22.58 0L160 303.6l107.72 107.72c6.23 6.23 16.34 6.23 22.58 0l25.03-25.03c6.23-6.23 6.23-16.34 0-22.58L207.6 256z'%3E%3C/path%3E%3C/svg%3E\");\n  -webkit-mask-position: center;\n  mask-position: center;\n  -webkit-mask-repeat: no-repeat;\n  mask-repeat: no-repeat;\n  -webkit-mask-size: contain;\n  mask-size: contain;\n  background-color: var(--ms-clear-color, #999999);\n  width: 0.625rem;\n  height: 1.125rem;\n  display: inline-block;\n  transition: 0.3s;\n}\n.multiselect-caret {\n  transform: rotate(0deg);\n  transition: 0.3s transform;\n  -webkit-mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z'%3E%3C/path%3E%3C/svg%3E\");\n  mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z'%3E%3C/path%3E%3C/svg%3E\");\n  -webkit-mask-position: center;\n  mask-position: center;\n  -webkit-mask-repeat: no-repeat;\n  mask-repeat: no-repeat;\n  -webkit-mask-size: contain;\n  mask-size: contain;\n  background-color: var(--ms-caret-color, #999999);\n  width: 0.625rem;\n  height: 1.125rem;\n  margin: 0 var(--ms-px, 0.875rem) 0 0;\n  position: relative;\n  z-index: 10;\n  flex-shrink: 0;\n  flex-grow: 0;\n  pointer-events: none;\n}\n.multiselect-caret.is-open {\n  transform: rotate(180deg);\n  pointer-events: auto;\n}\n.multiselect-dropdown {\n  position: absolute;\n  left: calc(var(--ms-border-width, 1px) * -1);\n  right: calc(var(--ms-border-width, 1px) * -1);\n  bottom: 0;\n  transform: translateY(100%);\n  border: var(--ms-dropdown-border-width, 1px) solid var(--ms-dropdown-border-color, #D1D5DB);\n  margin-top: calc(var(--ms-border-width, 1px) * -1);\n  overflow-y: scroll;\n  -webkit-overflow-scrolling: touch;\n  z-index: 100;\n  background: var(--ms-dropdown-bg, #FFFFFF);\n  display: flex;\n  flex-direction: column;\n  border-radius: 0 0 var(--ms-dropdown-radius, 4px) var(--ms-dropdown-radius, 4px);\n  outline: none;\n  max-height: var(--ms-max-height, 10rem);\n}\n.multiselect-dropdown.is-top {\n  transform: translateY(-100%);\n  top: var(--ms-border-width, 1px);\n  bottom: auto;\n  border-radius: var(--ms-dropdown-radius, 4px) var(--ms-dropdown-radius, 4px) 0 0;\n}\n.multiselect-dropdown.is-hidden {\n  display: none;\n}\n.multiselect-options {\n  padding: 0;\n  margin: 0;\n  list-style: none;\n  display: flex;\n  flex-direction: column;\n}\n.multiselect-group {\n  padding: 0;\n  margin: 0;\n}\n.multiselect-group-label {\n  padding: var(--ms-group-label-py, 0.3rem) var(--ms-group-label-px, 0.75rem);\n  font-size: 0.875rem;\n  font-weight: 600;\n  background: var(--ms-group-label-bg, #E5E7EB);\n  color: var(--ms-group-label-color, #374151);\n  cursor: default;\n  line-height: var(--ms-group-label-line-height, 1.375);\n  display: flex;\n  box-sizing: border-box;\n  text-decoration: none;\n  align-items: center;\n  justify-content: flex-start;\n  text-align: left;\n}\n.multiselect-group-label.is-pointable {\n  cursor: pointer;\n}\n.multiselect-group-label.is-pointed {\n  background: var(--ms-group-label-bg-pointed, #D1D5DB);\n  color: var(--ms-group-label-color-pointed, #374151);\n}\n.multiselect-group-label.is-selected {\n  background: var(--ms-group-label-bg-selected, #059669);\n  color: var(--ms-group-label-color-selected, #FFFFFF);\n}\n.multiselect-group-label.is-disabled {\n  background: var(--ms-group-label-bg-disabled, #F3F4F6);\n  color: var(--ms-group-label-color-disabled, #D1D5DB);\n  cursor: not-allowed;\n}\n.multiselect-group-label.is-selected.is-pointed {\n  background: var(--ms-group-label-bg-selected-pointed, #0c9e70);\n  color: var(--ms-group-label-color-selected-pointed, #FFFFFF);\n}\n.multiselect-group-label.is-selected.is-disabled {\n  background: var(--ms-group-label-bg-selected-disabled, #75cfb1);\n  color: var(--ms-group-label-color-selected-disabled, #D1FAE5);\n}\n.multiselect-group-options {\n  padding: 0;\n  margin: 0;\n}\n.multiselect-option {\n  padding: var(--ms-option-py, 0.5rem) var(--ms-option-px, 0.75rem);\n  font-size: var(--ms-option-font-size, 1rem);\n  line-height: var(--ms-option-line-height, 1.375);\n  cursor: pointer;\n  display: flex;\n  box-sizing: border-box;\n  text-decoration: none;\n  align-items: center;\n  justify-content: flex-start;\n  text-align: left;\n}\n.multiselect-option.is-pointed {\n  background: var(--ms-option-bg-pointed, #F3F4F6);\n  color: var(--ms-option-color-pointed, #1F2937);\n}\n.multiselect-option.is-selected {\n  background: var(--ms-option-bg-selected, #10B981);\n  color: var(--ms-option-color-selected, #FFFFFF);\n}\n.multiselect-option.is-disabled {\n  background: var(--ms-option-bg-disabled, #FFFFFF);\n  color: var(--ms-option-color-disabled, #D1D5DB);\n  cursor: not-allowed;\n}\n.multiselect-option.is-selected.is-pointed {\n  background: var(--ms-option-bg-selected-pointed, #26c08e);\n  color: var(--ms-option-color-selected-pointed, #FFFFFF);\n}\n.multiselect-option.is-selected.is-disabled {\n  background: var(--ms-option-bg-selected-disabled, #87dcc0);\n  color: var(--ms-option-color-selected-disabled, #D1FAE5);\n}\n.multiselect-no-options,\n.multiselect-no-results {\n  padding: var(--ms-option-py, 0.5rem) var(--ms-option-px, 0.75rem);\n  color: var(--ms-empty-color, #4B5563);\n}\n.multiselect-fake-input {\n  background: transparent;\n  position: absolute;\n  left: 0;\n  right: 0;\n  bottom: -1px;\n  width: 100%;\n  height: 1px;\n  border: 0;\n  padding: 0;\n  font-size: 0;\n  outline: none;\n}\n.multiselect-fake-input:active, .multiselect-fake-input:focus {\n  outline: none;\n}\n.multiselect-assistive-text {\n  position: absolute;\n  margin: -1px;\n  width: 1px;\n  height: 1px;\n  overflow: hidden;\n  clip: rect(0 0 0 0);\n}\n.multiselect-spacer {\n  display: none;\n}\n[dir=rtl] .multiselect-multiple-label,\n[dir=rtl] .multiselect-single-label,\n[dir=rtl] .multiselect-placeholder {\n  padding-right: var(--ms-px, 0.875rem);\n  padding-left: calc(1.25rem + var(--ms-px, 0.875rem) * 3);\n  left: auto;\n  right: 0;\n}\n[dir=rtl] .multiselect-search {\n  padding-left: 0;\n  padding-right: var(--ms-px, 0.875rem);\n}\n[dir=rtl] .multiselect-tags {\n  padding-left: 0;\n  padding-right: var(--ms-py, 0.5rem);\n}\n[dir=rtl] .multiselect-tag {\n  padding: var(--ms-tag-py, 0.125rem) var(--ms-tag-px, 0.5rem) var(--ms-tag-py, 0.125rem) 0;\n  margin-right: 0;\n  margin-left: var(--ms-tag-mx, 0.25rem);\n}\n[dir=rtl] .multiselect-tag.is-disabled {\n  padding-left: var(--ms-tag-px, 0.5rem);\n}\n[dir=rtl] .multiselect-spinner,\n[dir=rtl] .multiselect-caret {\n  margin: 0 0 0 var(--ms-px, 0.875rem);\n}\n[dir=rtl] .multiselect-clear {\n  padding: 0 0 0 var(--ms-px, 0.875rem);\n}\n@keyframes multiselect-spin {\nfrom {\n    transform: rotate(0);\n}\nto {\n    transform: rotate(360deg);\n}\n}\n.load-more-container {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  cursor: pointer;\n  padding: 8px;\n  transition: transform 0.2s ease-in-out;\n}\n.load-more-container:hover {\n  transform: scale(1.1);\n}", ""]);
+// Exports
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
+
+
+/***/ }),
+
 /***/ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/SearchMenu.vue?vue&type=style&index=0&id=2fa4c75c&lang=scss":
 /*!************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** ./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/SearchMenu.vue?vue&type=style&index=0&id=2fa4c75c&lang=scss ***!
@@ -1490,30 +1570,6 @@ __webpack_require__.r(__webpack_exports__);
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, ".flexible-search-menu-multiselect .multiselect {\n  position: relative;\n  margin: 0 auto;\n  width: 100%;\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  box-sizing: border-box;\n  cursor: pointer;\n  outline: none;\n  border: var(--ms-border-width, 1px) solid var(--ms-border-color, #D1D5DB);\n  border-radius: var(--ms-radius, 4px);\n  background: var(--ms-bg, #FFFFFF);\n  font-size: var(--ms-font-size, 1rem);\n  min-height: calc(2 * var(--ms-border-width, 1px) + var(--ms-font-size, 1rem) * var(--ms-line-height, 1.375) + 2 * var(--ms-py, 0.5rem));\n}\n.flexible-search-menu-multiselect .multiselect.is-open {\n  border-radius: var(--ms-radius, 4px) var(--ms-radius, 4px) 0 0;\n}\n.flexible-search-menu-multiselect .multiselect.is-open-top {\n  border-radius: 0 0 var(--ms-radius, 4px) var(--ms-radius, 4px);\n}\n.flexible-search-menu-multiselect .multiselect.is-disabled {\n  cursor: default;\n  background: var(--ms-bg-disabled, #F3F4F6);\n}\n.flexible-search-menu-multiselect .multiselect.is-active {\n  border: var(--ms-border-width-active, var(--ms-border-width, 1px)) solid var(--ms-border-color-active, var(--ms-border-color, #D1D5DB));\n  box-shadow: 0 0 0 var(--ms-ring-width, 3px) var(--ms-ring-color, rgba(16, 185, 129, 0.1882352941));\n}\n.flexible-search-menu-multiselect .multiselect-wrapper {\n  position: relative;\n  margin: 0 auto;\n  width: 100%;\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  box-sizing: border-box;\n  cursor: pointer;\n  outline: none;\n  min-height: calc(2 * var(--ms-border-width, 1px) + var(--ms-font-size, 1rem) * var(--ms-line-height, 1.375) + 2 * var(--ms-py, 0.5rem));\n}\n.flexible-search-menu-multiselect .multiselect-multiple-label,\n.flexible-search-menu-multiselect .multiselect-single-label,\n.flexible-search-menu-multiselect .multiselect-placeholder {\n  display: flex;\n  align-items: center;\n  height: 100%;\n  position: absolute;\n  left: 0;\n  top: 0;\n  pointer-events: none;\n  background: transparent;\n  line-height: var(--ms-line-height, 1.375);\n  padding-left: var(--ms-px, 0.875rem);\n  padding-right: calc(1.25rem + var(--ms-px, 0.875rem) * 3);\n  box-sizing: border-box;\n  max-width: 100%;\n}\n.flexible-search-menu-multiselect .multiselect-placeholder {\n  color: var(--ms-placeholder-color, #9CA3AF);\n}\n.flexible-search-menu-multiselect .multiselect-single-label-text {\n  overflow: hidden;\n  display: block;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n  max-width: 100%;\n}\n.flexible-search-menu-multiselect .multiselect-search {\n  width: 100%;\n  height: 100%;\n  position: absolute;\n  top: 0px;\n  bottom: 0px;\n  left: 0px;\n  right: 0px;\n  outline: none;\n  box-sizing: border-box;\n  border: 0;\n  -webkit-appearance: none;\n     -moz-appearance: none;\n          appearance: none;\n  font-size: inherit;\n  font-family: inherit;\n  background: var(--ms-bg, #FFFFFF);\n  border-radius: var(--ms-radius, 4px);\n  padding-left: var(--ms-px, 0.875rem);\n}\n.flexible-search-menu-multiselect .multiselect-search::-webkit-search-decoration, .flexible-search-menu-multiselect .multiselect-search::-webkit-search-cancel-button, .flexible-search-menu-multiselect .multiselect-search::-webkit-search-results-button, .flexible-search-menu-multiselect .multiselect-search::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n}\n.flexible-search-menu-multiselect .multiselect-tags {\n  flex-grow: 1;\n  flex-shrink: 1;\n  display: flex;\n  flex-wrap: wrap;\n  margin: var(--ms-tag-my, 0.25rem) 0 0;\n  padding-left: var(--ms-py, 0.5rem);\n  align-items: center;\n  min-width: 0;\n}\n.flexible-search-menu-multiselect .multiselect-tag {\n  background: var(--ms-tag-bg, #10B981);\n  color: var(--ms-tag-color, #FFFFFF);\n  font-size: var(--ms-tag-font-size, 0.875rem);\n  line-height: var(--ms-tag-line-height, 1.25rem);\n  font-weight: var(--ms-tag-font-weight, 600);\n  padding: var(--ms-tag-py, 0.125rem) 0 var(--ms-tag-py, 0.125rem) var(--ms-tag-px, 0.5rem);\n  border-radius: var(--ms-tag-radius, 4px);\n  margin-right: var(--ms-tag-mx, 0.25rem);\n  margin-bottom: var(--ms-tag-my, 0.25rem);\n  display: flex;\n  align-items: center;\n  white-space: nowrap;\n  min-width: 0;\n}\n.flexible-search-menu-multiselect .multiselect-tag.is-disabled {\n  padding-right: var(--ms-tag-px, 0.5rem);\n  background: var(--ms-tag-bg-disabled, #9CA3AF);\n  color: var(--ms-tag-color-disabled, #FFFFFF);\n}\n.flexible-search-menu-multiselect .multiselect-tag-wrapper {\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.flexible-search-menu-multiselect .multiselect-tag-wrapper-break {\n  white-space: normal;\n  word-break: break-all;\n}\n.flexible-search-menu-multiselect .multiselect-tag-remove {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: var(--ms-tag-remove-py, 0.25rem) var(--ms-tag-remove-px, 0.25rem);\n  margin: var(--ms-tag-remove-my, 0rem) var(--ms-tag-remove-mx, 0.125rem);\n  border-radius: var(--ms-tag-remove-radius, 4px);\n}\n.flexible-search-menu-multiselect .multiselect-tag-remove:hover {\n  background: rgba(0, 0, 0, 0.062745098);\n}\n.flexible-search-menu-multiselect .multiselect-tag-remove-icon {\n  -webkit-mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M207.6 256l107.72-107.72c6.23-6.23 6.23-16.34 0-22.58l-25.03-25.03c-6.23-6.23-16.34-6.23-22.58 0L160 208.4 52.28 100.68c-6.23-6.23-16.34-6.23-22.58 0L4.68 125.7c-6.23 6.23-6.23 16.34 0 22.58L112.4 256 4.68 363.72c-6.23 6.23-6.23 16.34 0 22.58l25.03 25.03c6.23 6.23 16.34 6.23 22.58 0L160 303.6l107.72 107.72c6.23 6.23 16.34 6.23 22.58 0l25.03-25.03c6.23-6.23 6.23-16.34 0-22.58L207.6 256z'%3E%3C/path%3E%3C/svg%3E\");\n  mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M207.6 256l107.72-107.72c6.23-6.23 6.23-16.34 0-22.58l-25.03-25.03c-6.23-6.23-16.34-6.23-22.58 0L160 208.4 52.28 100.68c-6.23-6.23-16.34-6.23-22.58 0L4.68 125.7c-6.23 6.23-6.23 16.34 0 22.58L112.4 256 4.68 363.72c-6.23 6.23-6.23 16.34 0 22.58l25.03 25.03c6.23 6.23 16.34 6.23 22.58 0L160 303.6l107.72 107.72c6.23 6.23 16.34 6.23 22.58 0l25.03-25.03c6.23-6.23 6.23-16.34 0-22.58L207.6 256z'%3E%3C/path%3E%3C/svg%3E\");\n  -webkit-mask-position: center;\n  mask-position: center;\n  -webkit-mask-repeat: no-repeat;\n  mask-repeat: no-repeat;\n  -webkit-mask-size: contain;\n  mask-size: contain;\n  background-color: currentColor;\n  opacity: 0.8;\n  display: inline-block;\n  width: 0.75rem;\n  height: 0.75rem;\n}\n.flexible-search-menu-multiselect .multiselect-tags-search-wrapper {\n  display: inline-block;\n  position: relative;\n  margin: 0 var(--ms-tag-mx, 4px) var(--ms-tag-my, 4px);\n  flex-grow: 1;\n  flex-shrink: 1;\n  height: 100%;\n}\n.flexible-search-menu-multiselect .multiselect-tags-search-copy {\n  visibility: hidden;\n  white-space: pre-wrap;\n  display: inline-block;\n  height: 1px;\n  width: 100%;\n}\n.flexible-search-menu-multiselect .multiselect-tags-search {\n  position: absolute;\n  left: 0;\n  right: 0;\n  top: 0;\n  bottom: 0;\n  border: 0;\n  -webkit-appearance: none;\n     -moz-appearance: none;\n          appearance: none;\n  outline: none;\n  padding: 0;\n  font-size: inherit;\n  font-family: inherit;\n  box-sizing: border-box;\n  width: 100%;\n  appearance: none;\n}\n.flexible-search-menu-multiselect .multiselect-tags-search::-webkit-search-decoration, .flexible-search-menu-multiselect .multiselect-tags-search::-webkit-search-cancel-button, .flexible-search-menu-multiselect .multiselect-tags-search::-webkit-search-results-button, .flexible-search-menu-multiselect .multiselect-tags-search::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n}\n.flexible-search-menu-multiselect .multiselect-inifite {\n  display: flex;\n  width: 100%;\n  justify-content: center;\n  align-items: center;\n  min-height: calc(2 * var(--ms-border-width, 1px) + var(--ms-font-size, 1rem) * var(--ms-line-height, 1.375) + 2 * var(--ms-py, 0.5rem));\n}\n.flexible-search-menu-multiselect .multiselect-spinner,\n.flexible-search-menu-multiselect .multiselect-inifite-spinner {\n  -webkit-mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 512 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M456.433 371.72l-27.79-16.045c-7.192-4.152-10.052-13.136-6.487-20.636 25.82-54.328 23.566-118.602-6.768-171.03-30.265-52.529-84.802-86.621-144.76-91.424C262.35 71.922 256 64.953 256 56.649V24.56c0-9.31 7.916-16.609 17.204-15.96 81.795 5.717 156.412 51.902 197.611 123.408 41.301 71.385 43.99 159.096 8.042 232.792-4.082 8.369-14.361 11.575-22.424 6.92z'%3E%3C/path%3E%3C/svg%3E\");\n  mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 512 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M456.433 371.72l-27.79-16.045c-7.192-4.152-10.052-13.136-6.487-20.636 25.82-54.328 23.566-118.602-6.768-171.03-30.265-52.529-84.802-86.621-144.76-91.424C262.35 71.922 256 64.953 256 56.649V24.56c0-9.31 7.916-16.609 17.204-15.96 81.795 5.717 156.412 51.902 197.611 123.408 41.301 71.385 43.99 159.096 8.042 232.792-4.082 8.369-14.361 11.575-22.424 6.92z'%3E%3C/path%3E%3C/svg%3E\");\n  -webkit-mask-position: center;\n  mask-position: center;\n  -webkit-mask-repeat: no-repeat;\n  mask-repeat: no-repeat;\n  -webkit-mask-size: contain;\n  mask-size: contain;\n  background-color: var(--ms-spinner-color, #10B981);\n  width: 1rem;\n  height: 1rem;\n  z-index: 10;\n  animation: multiselect-spin 1s linear infinite;\n  flex-shrink: 0;\n  flex-grow: 0;\n}\n.flexible-search-menu-multiselect .multiselect-spinner {\n  margin: 0 var(--ms-px, 0.875rem) 0 0;\n}\n.flexible-search-menu-multiselect .multiselect-clear {\n  padding: 0 var(--ms-px, 0.875rem) 0 0px;\n  position: relative;\n  z-index: 10;\n  opacity: 1;\n  transition: 0.3s;\n  flex-shrink: 0;\n  flex-grow: 0;\n  display: flex;\n}\n.flexible-search-menu-multiselect .multiselect-clear:hover .multiselect-clear-icon {\n  background-color: var(--ms-clear-color-hover, #000000);\n}\n.flexible-search-menu-multiselect .multiselect-clear-icon {\n  -webkit-mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M207.6 256l107.72-107.72c6.23-6.23 6.23-16.34 0-22.58l-25.03-25.03c-6.23-6.23-16.34-6.23-22.58 0L160 208.4 52.28 100.68c-6.23-6.23-16.34-6.23-22.58 0L4.68 125.7c-6.23 6.23-6.23 16.34 0 22.58L112.4 256 4.68 363.72c-6.23 6.23-6.23 16.34 0 22.58l25.03 25.03c6.23 6.23 16.34 6.23 22.58 0L160 303.6l107.72 107.72c6.23 6.23 16.34 6.23 22.58 0l25.03-25.03c6.23-6.23 6.23-16.34 0-22.58L207.6 256z'%3E%3C/path%3E%3C/svg%3E\");\n  mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M207.6 256l107.72-107.72c6.23-6.23 6.23-16.34 0-22.58l-25.03-25.03c-6.23-6.23-16.34-6.23-22.58 0L160 208.4 52.28 100.68c-6.23-6.23-16.34-6.23-22.58 0L4.68 125.7c-6.23 6.23-6.23 16.34 0 22.58L112.4 256 4.68 363.72c-6.23 6.23-6.23 16.34 0 22.58l25.03 25.03c6.23 6.23 16.34 6.23 22.58 0L160 303.6l107.72 107.72c6.23 6.23 16.34 6.23 22.58 0l25.03-25.03c6.23-6.23 6.23-16.34 0-22.58L207.6 256z'%3E%3C/path%3E%3C/svg%3E\");\n  -webkit-mask-position: center;\n  mask-position: center;\n  -webkit-mask-repeat: no-repeat;\n  mask-repeat: no-repeat;\n  -webkit-mask-size: contain;\n  mask-size: contain;\n  background-color: var(--ms-clear-color, #999999);\n  width: 0.625rem;\n  height: 1.125rem;\n  display: inline-block;\n  transition: 0.3s;\n}\n.flexible-search-menu-multiselect .multiselect-caret {\n  transform: rotate(0deg);\n  transition: 0.3s transform;\n  -webkit-mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z'%3E%3C/path%3E%3C/svg%3E\");\n  mask-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 320 512' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z'%3E%3C/path%3E%3C/svg%3E\");\n  -webkit-mask-position: center;\n  mask-position: center;\n  -webkit-mask-repeat: no-repeat;\n  mask-repeat: no-repeat;\n  -webkit-mask-size: contain;\n  mask-size: contain;\n  background-color: var(--ms-caret-color, #999999);\n  width: 0.625rem;\n  height: 1.125rem;\n  margin: 0 var(--ms-px, 0.875rem) 0 0;\n  position: relative;\n  z-index: 10;\n  flex-shrink: 0;\n  flex-grow: 0;\n  pointer-events: none;\n}\n.flexible-search-menu-multiselect .multiselect-caret.is-open {\n  transform: rotate(180deg);\n  pointer-events: auto;\n}\n.flexible-search-menu-multiselect .multiselect-dropdown {\n  position: absolute;\n  left: calc(var(--ms-border-width, 1px) * -1);\n  right: calc(var(--ms-border-width, 1px) * -1);\n  bottom: 0;\n  transform: translateY(100%);\n  border: var(--ms-dropdown-border-width, 1px) solid var(--ms-dropdown-border-color, #D1D5DB);\n  margin-top: calc(var(--ms-border-width, 1px) * -1);\n  overflow-y: scroll;\n  -webkit-overflow-scrolling: touch;\n  z-index: 100;\n  background: var(--ms-dropdown-bg, #FFFFFF);\n  display: flex;\n  flex-direction: column;\n  border-radius: 0 0 var(--ms-dropdown-radius, 4px) var(--ms-dropdown-radius, 4px);\n  outline: none;\n  max-height: var(--ms-max-height, 10rem);\n}\n.flexible-search-menu-multiselect .multiselect-dropdown.is-top {\n  transform: translateY(-100%);\n  top: var(--ms-border-width, 1px);\n  bottom: auto;\n  border-radius: var(--ms-dropdown-radius, 4px) var(--ms-dropdown-radius, 4px) 0 0;\n}\n.flexible-search-menu-multiselect .multiselect-dropdown.is-hidden {\n  display: none;\n}\n.flexible-search-menu-multiselect .multiselect-options {\n  padding: 0;\n  margin: 0;\n  list-style: none;\n  display: flex;\n  flex-direction: column;\n}\n.flexible-search-menu-multiselect .multiselect-group {\n  padding: 0;\n  margin: 0;\n}\n.flexible-search-menu-multiselect .multiselect-group-label {\n  padding: var(--ms-group-label-py, 0.3rem) var(--ms-group-label-px, 0.75rem);\n  font-size: 0.875rem;\n  font-weight: 600;\n  background: var(--ms-group-label-bg, #E5E7EB);\n  color: var(--ms-group-label-color, #374151);\n  cursor: default;\n  line-height: var(--ms-group-label-line-height, 1.375);\n  display: flex;\n  box-sizing: border-box;\n  text-decoration: none;\n  align-items: center;\n  justify-content: flex-start;\n  text-align: left;\n}\n.flexible-search-menu-multiselect .multiselect-group-label.is-pointable {\n  cursor: pointer;\n}\n.flexible-search-menu-multiselect .multiselect-group-label.is-pointed {\n  background: var(--ms-group-label-bg-pointed, #D1D5DB);\n  color: var(--ms-group-label-color-pointed, #374151);\n}\n.flexible-search-menu-multiselect .multiselect-group-label.is-selected {\n  background: var(--ms-group-label-bg-selected, #059669);\n  color: var(--ms-group-label-color-selected, #FFFFFF);\n}\n.flexible-search-menu-multiselect .multiselect-group-label.is-disabled {\n  background: var(--ms-group-label-bg-disabled, #F3F4F6);\n  color: var(--ms-group-label-color-disabled, #D1D5DB);\n  cursor: not-allowed;\n}\n.flexible-search-menu-multiselect .multiselect-group-label.is-selected.is-pointed {\n  background: var(--ms-group-label-bg-selected-pointed, #0c9e70);\n  color: var(--ms-group-label-color-selected-pointed, #FFFFFF);\n}\n.flexible-search-menu-multiselect .multiselect-group-label.is-selected.is-disabled {\n  background: var(--ms-group-label-bg-selected-disabled, #75cfb1);\n  color: var(--ms-group-label-color-selected-disabled, #D1FAE5);\n}\n.flexible-search-menu-multiselect .multiselect-group-options {\n  padding: 0;\n  margin: 0;\n}\n.flexible-search-menu-multiselect .multiselect-option {\n  padding: var(--ms-option-py, 0.5rem) var(--ms-option-px, 0.75rem);\n  font-size: var(--ms-option-font-size, 1rem);\n  line-height: var(--ms-option-line-height, 1.375);\n  cursor: pointer;\n  display: flex;\n  box-sizing: border-box;\n  text-decoration: none;\n  align-items: center;\n  justify-content: flex-start;\n  text-align: left;\n}\n.flexible-search-menu-multiselect .multiselect-option.is-pointed {\n  background: var(--ms-option-bg-pointed, #F3F4F6);\n  color: var(--ms-option-color-pointed, #1F2937);\n}\n.flexible-search-menu-multiselect .multiselect-option.is-selected {\n  background: var(--ms-option-bg-selected, #10B981);\n  color: var(--ms-option-color-selected, #FFFFFF);\n}\n.flexible-search-menu-multiselect .multiselect-option.is-disabled {\n  background: var(--ms-option-bg-disabled, #FFFFFF);\n  color: var(--ms-option-color-disabled, #D1D5DB);\n  cursor: not-allowed;\n}\n.flexible-search-menu-multiselect .multiselect-option.is-selected.is-pointed {\n  background: var(--ms-option-bg-selected-pointed, #26c08e);\n  color: var(--ms-option-color-selected-pointed, #FFFFFF);\n}\n.flexible-search-menu-multiselect .multiselect-option.is-selected.is-disabled {\n  background: var(--ms-option-bg-selected-disabled, #87dcc0);\n  color: var(--ms-option-color-selected-disabled, #D1FAE5);\n}\n.flexible-search-menu-multiselect .multiselect-no-options,\n.flexible-search-menu-multiselect .multiselect-no-results {\n  padding: var(--ms-option-py, 0.5rem) var(--ms-option-px, 0.75rem);\n  color: var(--ms-empty-color, #4B5563);\n}\n.flexible-search-menu-multiselect .multiselect-fake-input {\n  background: transparent;\n  position: absolute;\n  left: 0;\n  right: 0;\n  bottom: -1px;\n  width: 100%;\n  height: 1px;\n  border: 0;\n  padding: 0;\n  font-size: 0;\n  outline: none;\n}\n.flexible-search-menu-multiselect .multiselect-fake-input:active, .flexible-search-menu-multiselect .multiselect-fake-input:focus {\n  outline: none;\n}\n.flexible-search-menu-multiselect .multiselect-assistive-text {\n  position: absolute;\n  margin: -1px;\n  width: 1px;\n  height: 1px;\n  overflow: hidden;\n  clip: rect(0 0 0 0);\n}\n.flexible-search-menu-multiselect .multiselect-spacer {\n  display: none;\n}\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-multiple-label,\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-single-label,\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-placeholder {\n  padding-right: var(--ms-px, 0.875rem);\n  padding-left: calc(1.25rem + var(--ms-px, 0.875rem) * 3);\n  left: auto;\n  right: 0;\n}\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-search {\n  padding-left: 0;\n  padding-right: var(--ms-px, 0.875rem);\n}\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-tags {\n  padding-left: 0;\n  padding-right: var(--ms-py, 0.5rem);\n}\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-tag {\n  padding: var(--ms-tag-py, 0.125rem) var(--ms-tag-px, 0.5rem) var(--ms-tag-py, 0.125rem) 0;\n  margin-right: 0;\n  margin-left: var(--ms-tag-mx, 0.25rem);\n}\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-tag.is-disabled {\n  padding-left: var(--ms-tag-px, 0.5rem);\n}\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-spinner,\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-caret {\n  margin: 0 0 0 var(--ms-px, 0.875rem);\n}\n.flexible-search-menu-multiselect [dir=rtl] .multiselect-clear {\n  padding: 0 0 0 var(--ms-px, 0.875rem);\n}\n@keyframes multiselect-spin {\nfrom {\n    transform: rotate(0);\n}\nto {\n    transform: rotate(360deg);\n}\n}", ""]);
-// Exports
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
-
-
-/***/ }),
-
-/***/ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=css":
-/*!****************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=css ***!
-  \****************************************************************************************************************************************************************************************************************************************************************************************************************************************/
-/***/ ((module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../node_modules/css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
-/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0__);
-// Imports
-
-var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
-// Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.load-more-container {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  cursor: pointer;\n  padding: 8px;\n  transition: transform 0.2s ease-in-out;\n}\n.load-more-container:hover {\n  transform: scale(1.1);\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -5053,6 +5109,36 @@ Sortable.mount(Remove, Revert);
 
 /***/ }),
 
+/***/ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss":
+/*!***************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss ***!
+  \***************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! !../../../node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js */ "./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js");
+/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _node_modules_css_loader_dist_cjs_js_clonedRuleSet_12_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_12_use_2_node_modules_sass_loader_dist_cjs_js_clonedRuleSet_12_use_3_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_FormField_vue_vue_type_style_index_0_id_c023248a_lang_scss__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! !!../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!../../../node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss */ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss");
+
+            
+
+var options = {};
+
+options.insert = "head";
+options.singleton = false;
+
+var update = _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default()(_node_modules_css_loader_dist_cjs_js_clonedRuleSet_12_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_12_use_2_node_modules_sass_loader_dist_cjs_js_clonedRuleSet_12_use_3_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_FormField_vue_vue_type_style_index_0_id_c023248a_lang_scss__WEBPACK_IMPORTED_MODULE_1__["default"], options);
+
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_node_modules_css_loader_dist_cjs_js_clonedRuleSet_12_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_12_use_2_node_modules_sass_loader_dist_cjs_js_clonedRuleSet_12_use_3_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_FormField_vue_vue_type_style_index_0_id_c023248a_lang_scss__WEBPACK_IMPORTED_MODULE_1__["default"].locals || {});
+
+/***/ }),
+
 /***/ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/SearchMenu.vue?vue&type=style&index=0&id=2fa4c75c&lang=scss":
 /*!****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** ./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/SearchMenu.vue?vue&type=style&index=0&id=2fa4c75c&lang=scss ***!
@@ -5080,36 +5166,6 @@ var update = _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js
 
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_node_modules_css_loader_dist_cjs_js_clonedRuleSet_12_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_12_use_2_node_modules_sass_loader_dist_cjs_js_clonedRuleSet_12_use_3_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_SearchMenu_vue_vue_type_style_index_0_id_2fa4c75c_lang_scss__WEBPACK_IMPORTED_MODULE_1__["default"].locals || {});
-
-/***/ }),
-
-/***/ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=css":
-/*!********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=css ***!
-  \********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! !../../../node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js */ "./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js");
-/* harmony import */ var _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_FormField_vue_vue_type_style_index_0_id_c023248a_lang_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! !!../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./FormField.vue?vue&type=style&index=0&id=c023248a&lang=css */ "./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=css");
-
-            
-
-var options = {};
-
-options.insert = "head";
-options.singleton = false;
-
-var update = _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default()(_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_FormField_vue_vue_type_style_index_0_id_c023248a_lang_css__WEBPACK_IMPORTED_MODULE_1__["default"], options);
-
-
-
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_FormField_vue_vue_type_style_index_0_id_c023248a_lang_css__WEBPACK_IMPORTED_MODULE_1__["default"].locals || {});
 
 /***/ }),
 
@@ -5571,7 +5627,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _FormField_vue_vue_type_template_id_c023248a__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./FormField.vue?vue&type=template&id=c023248a */ "./resources/js/components/FormField.vue?vue&type=template&id=c023248a");
 /* harmony import */ var _FormField_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./FormField.vue?vue&type=script&lang=js */ "./resources/js/components/FormField.vue?vue&type=script&lang=js");
-/* harmony import */ var _FormField_vue_vue_type_style_index_0_id_c023248a_lang_css__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./FormField.vue?vue&type=style&index=0&id=c023248a&lang=css */ "./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=css");
+/* harmony import */ var _FormField_vue_vue_type_style_index_0_id_c023248a_lang_scss__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss */ "./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss");
 /* harmony import */ var _node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../../node_modules/vue-loader/dist/exportHelper.js */ "./node_modules/vue-loader/dist/exportHelper.js");
 
 
@@ -5966,6 +6022,19 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss":
+/*!********************************************************************************************!*\
+  !*** ./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss ***!
+  \********************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_style_loader_dist_cjs_js_node_modules_css_loader_dist_cjs_js_clonedRuleSet_12_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_12_use_2_node_modules_sass_loader_dist_cjs_js_clonedRuleSet_12_use_3_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_FormField_vue_vue_type_style_index_0_id_c023248a_lang_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../node_modules/style-loader/dist/cjs.js!../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!../../../node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss */ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=scss");
+
+
+/***/ }),
+
 /***/ "./resources/js/components/SearchMenu.vue?vue&type=style&index=0&id=2fa4c75c&lang=scss":
 /*!*********************************************************************************************!*\
   !*** ./resources/js/components/SearchMenu.vue?vue&type=style&index=0&id=2fa4c75c&lang=scss ***!
@@ -5975,19 +6044,6 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _node_modules_style_loader_dist_cjs_js_node_modules_css_loader_dist_cjs_js_clonedRuleSet_12_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_12_use_2_node_modules_sass_loader_dist_cjs_js_clonedRuleSet_12_use_3_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_SearchMenu_vue_vue_type_style_index_0_id_2fa4c75c_lang_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../node_modules/style-loader/dist/cjs.js!../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!../../../node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./SearchMenu.vue?vue&type=style&index=0&id=2fa4c75c&lang=scss */ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-12.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-12.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-12.use[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/SearchMenu.vue?vue&type=style&index=0&id=2fa4c75c&lang=scss");
-
-
-/***/ }),
-
-/***/ "./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=css":
-/*!*******************************************************************************************!*\
-  !*** ./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=css ***!
-  \*******************************************************************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _node_modules_style_loader_dist_cjs_js_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_FormField_vue_vue_type_style_index_0_id_c023248a_lang_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../node_modules/style-loader/dist/cjs.js!../../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../../node_modules/vue-loader/dist/stylePostLoader.js!../../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./FormField.vue?vue&type=style&index=0&id=c023248a&lang=css */ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/components/FormField.vue?vue&type=style&index=0&id=c023248a&lang=css");
 
 
 /***/ }),

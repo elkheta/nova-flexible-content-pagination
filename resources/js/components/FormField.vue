@@ -1,30 +1,81 @@
 <template>
-  <component :dusk="field.attribute" :is="field.fullWidth ? 'FullWidthField' : 'default-field'" :field="field"
-    :errors="errors" :show-help-text="showHelpText" full-width-content>
+  <component
+      :dusk="field.attribute"
+      :is="field.fullWidth ? 'FullWidthField' : 'default-field'"
+      :field="field"
+      :errors="errors"
+      :show-help-text="showHelpText"
+      full-width-content
+  >
     <template #field>
-      <div ref="flexibleFieldContainer">
-        <form-nova-flexible-content-group v-for="(group, groupIndex) in mainGroups"
-          :dusk="field.attribute + '-' + groupIndex" :key="group.key" :field="field" :group="group" :index="groupIndex"
-          :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
-          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" />
+
+      <div v-if="hasActiveTermFilter" class="flexible-search-menu-multiselect">
+      <Multiselect
+          v-model="selectedTerm"
+          :options="availableTerms"
+          placeholder="Filter by Active Term"
+          track-by="value"
+          :searchable="true"
+      />
       </div>
-      <div class="load-more-container" v-if="showLoadMoreButton">
-        <div @click="loadMore" class="btn btn-default btn-primary">
-          Load More
-        </div>
+
+      <div ref="flexibleFieldContainer">
+        <form-nova-flexible-content-group
+            v-for="(group, groupIndex) in mainGroups"
+            :dusk="field.attribute + '-' + groupIndex"
+            :key="group.key"
+            :field="field"
+            :group="group"
+            :index="groupIndex"
+            :resource-name="resourceName"
+            :resource-id="resourceId"
+            :errors="errors"
+            :mode="mode"
+            @move-up="moveUp(group.key)"
+            @move-down="moveDown(group.key)"
+            @remove="remove(group.key)"
+        />
+      </div>
+      <div class="load-more-container"  v-if="showLoadMoreButton">
+        <div
+         
+          @click="loadMore"
+          class="btn btn-default btn-primary"
+      >
+        Load More
+      </div>
 
 
       </div>
 
       <hr v-if="showDividerBeforeLast" class="last-divider mb-3" />
-      <form-nova-flexible-content-group v-if="lastGroup" :dusk="field.attribute + '-last'" :key="lastGroup.key"
-        :field="field" :group="lastGroup" :index="orderedGroups.length - 1" :resource-name="resourceName"
-        :resource-id="resourceId" :errors="errors" :mode="mode" @move-up="moveUp(lastGroup.key)"
-        @move-down="moveDown(lastGroup.key)" @remove="remove(lastGroup.key)" />
-
-      <component :layouts="layouts" :is="field.menu.component" :field="field" :limit-counter="limitCounter"
-        :limit-per-layout-counter="limitPerLayoutCounter" :errors="errors" :resource-name="resourceName"
-        :resource-id="resourceId" @addGroup="addGroup($event)" />
+      <form-nova-flexible-content-group
+    v-if="lastGroup"
+    :dusk="field.attribute + '-last'"
+    :key="lastGroup.key"
+    :field="field"
+    :group="lastGroup"
+    :index="orderedGroups.length - 1"
+    :resource-name="resourceName"
+    :resource-id="resourceId"
+    :errors="errors"
+    :mode="mode"
+    @move-up="moveUp(lastGroup.key)"
+    @move-down="moveDown(lastGroup.key)"
+    @remove="remove(lastGroup.key)"
+  />
+   
+      <component
+          :layouts="layouts"
+          :is="field.menu.component"
+          :field="field"
+          :limit-counter="limitCounter"
+          :limit-per-layout-counter="limitPerLayoutCounter"
+          :errors="errors"
+          :resource-name="resourceName"
+          :resource-id="resourceId"
+          @addGroup="addGroup($event)"
+      />
     </template>
   </component>
 </template>
@@ -34,6 +85,7 @@ import FullWidthField from "./FullWidthField";
 import Sortable from "sortablejs";
 import { DependentFormField, HandlesValidationErrors, mapProps, } from "laravel-nova";
 import Group from "../group";
+import Multiselect from "@vueform/multiselect";
 
 export default {
   mixins: [HandlesValidationErrors, DependentFormField],
@@ -42,7 +94,7 @@ export default {
     ...mapProps(["resourceName", "resourceId", "mode"]),
   },
 
-  components: { FullWidthField },
+  components: {FullWidthField,Multiselect},
 
   data() {
     return {
@@ -50,13 +102,25 @@ export default {
       groups: {},
       files: {},
       sortableInstance: null,
-      visibleCount: this.field.initialItemsCount || null, // Use this.field instead of this.currentField
+      visibleCount: this.field.initialItemsCount || null,
+      selectedTerm: null,
+      availableTerms: [
+        { value: "ALL", label: "All" },
+        { value: "FIRST_TERM", label: "First Term" },
+        { value: "SECOND_TERM", label: "Second Term" }
+      ],
     };
   },
 
   computed: {
     layouts() {
       return this.field.layouts || false;
+    },
+    filteredGroups() {
+      if (!this.hasActiveTermFilter) {
+        return this.mainGroups;
+      }
+      return this.selectedTerm ? this.mainGroups.filter(group => this.matchesSelectedTerm(group)) : this.mainGroups;
     },
     orderedGroups() {
       return this.order.reduce((groups, key) => {
@@ -70,20 +134,20 @@ export default {
       } else {
         return this.orderedGroups;
       }
-    },
+  },
 
-    lastGroup() {
-      let totalGroups = this.orderedGroups.length;
-      if (this.paginate && (totalGroups > this.visibleCount)) {
-        return this.orderedGroups[totalGroups - 1]; // Always return last group
-      }
+  lastGroup() {
+    let totalGroups = this.orderedGroups.length;
+    if (this.paginate && (totalGroups > this.visibleCount)) {
+      return this.orderedGroups[totalGroups - 1]; // Always return last group
+    }
 
-      return null; // No last group needed if all are visible
-    },
+    return null; // No last group needed if all are visible
+  },
 
-    showDividerBeforeLast() {
-      return this.orderedGroups.length > this.visibleCount + 1; // Show divider if hiding items
-    },
+  showDividerBeforeLast() {
+    return this.orderedGroups.length >  this.visibleCount + 1; // Show divider if hiding items
+  },
     showLoadMoreButton() {
       return this.paginate && (this.visibleCount + 1 < this.orderedGroups.length);
     },
@@ -105,7 +169,7 @@ export default {
           return layoutCounts;
         }
         let count = Object.values(this.groups).filter(
-          (group) => group.name === layout.name,
+            (group) => group.name === layout.name,
         ).length;
 
         layoutCounts[layout.name] = layout.limit - count;
@@ -115,13 +179,30 @@ export default {
     },
     paginate() {
       return this.field.paginate;
+    },
+    hasActiveTermFilter() {
+      return false;
+    }
+  },
+  watch: {
+    selectedTerm() {
+      this.$forceUpdate();
     }
   },
 
   methods: {
     loadMore() {
-      this.visibleCount += this.field.paginationCount || null; // Use this.field instead of this.currentField
+      this.visibleCount += this.field.paginationCount || null;
     },
+    matchesSelectedTerm(group) {
+      const term = this.extractGroupTerm(group);
+      return term === this.selectedTerm;
+    },
+
+    extractGroupTerm(group) {
+      return group.fields.find(f => f.attribute.endsWith('__course_heading_active_term'))?.value;
+    },
+
     /*
     * Set the initial, internal value for the field.
     */
@@ -249,9 +330,10 @@ export default {
       this.order.push(group.key);
       if (this.paginate && !populate) {
         this.visibleCount++;
+        this.selectedTerm = null;
       }
     },
-
+    
 
     /**
      * Move a group up
@@ -319,7 +401,9 @@ export default {
   },
 };
 </script>
-<style>
+<style lang="scss">
+@import "@vueform/multiselect/themes/default.scss";
+
 .load-more-container {
   display: flex;
   justify-content: center;
@@ -327,9 +411,9 @@ export default {
   cursor: pointer;
   padding: 8px;
   transition: transform 0.2s ease-in-out;
-}
 
-.load-more-container:hover {
-  transform: scale(1.1);
+  &:hover {
+    transform: scale(1.1);
+  }
 }
 </style>

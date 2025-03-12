@@ -141,6 +141,14 @@ class Flexible extends Field
     }
 
     /**
+     * @param bool $value
+     * @return Flexible
+     */
+    public function hasActiveTermFilter(bool $value = true): Flexible
+    {
+        return $this->withMeta(['hasActiveTermFilter' => $value]);
+    }
+    /**
      * Get the initial items count.
      *
      * @return int Number of initial items.
@@ -473,6 +481,7 @@ class Flexible extends Field
     protected function extractValue(NovaRequest $request, $attribute)
     {
         $value = $request[$attribute];
+
 
         if (! $value) {
             return;
