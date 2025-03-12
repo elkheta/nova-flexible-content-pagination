@@ -196,10 +196,10 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return null; // No last group needed if all are visible
     },
     showDividerBeforeLast: function showDividerBeforeLast() {
-      return this.orderedGroups.length > this.visibleCount; // Show divider if hiding items
+      return this.orderedGroups.length > this.visibleCount + 1; // Show divider if hiding items
     },
     showLoadMoreButton: function showLoadMoreButton() {
-      return this.paginate && this.visibleCount < this.orderedGroups.length;
+      return this.paginate && this.visibleCount + 1 < this.orderedGroups.length;
     },
     limitCounter: function limitCounter() {
       if (this.field.limit === null || typeof this.field.limit == "undefined") {
@@ -317,7 +317,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         group = new _group__WEBPACK_IMPORTED_MODULE_3__["default"](layout.name, layout.title, fields, this.currentField, key, collapsed);
       this.groups[group.key] = group;
       this.order.push(group.key);
-      if (!populate) {
+      if (this.paginate && !populate) {
         this.visibleCount++;
       }
     },
@@ -901,11 +901,12 @@ var _hoisted_1 = {
   ref: "flexibleFieldContainer"
 };
 var _hoisted_2 = {
+  key: 0,
   "class": "load-more-container"
 };
 var _hoisted_3 = {
-  key: 0,
-  "class": "last-divider"
+  key: 1,
+  "class": "last-divider mb-3"
 };
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_form_nova_flexible_content_group = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("form-nova-flexible-content-group");
@@ -938,13 +939,12 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             return $options.remove(group.key);
           }
         }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove"]);
-      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_2, [$options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
-        key: 0,
+      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_2, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
         onClick: _cache[0] || (_cache[0] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
         }),
         "class": "btn btn-default btn-primary"
-      }, " Load More ")) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), $options.showDividerBeforeLast ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("hr", _hoisted_3)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.lastGroup ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
+      }, " Load More ")])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.showDividerBeforeLast ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("hr", _hoisted_3)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.lastGroup ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
         dusk: _ctx.field.attribute + '-last',
         key: $options.lastGroup.key,
         field: _ctx.field,

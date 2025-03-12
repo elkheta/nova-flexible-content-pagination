@@ -25,9 +25,9 @@
             @remove="remove(group.key)"
         />
       </div>
-      <div class="load-more-container">
+      <div class="load-more-container"  v-if="showLoadMoreButton">
         <div
-          v-if="showLoadMoreButton"
+         
           @click="loadMore"
           class="btn btn-default btn-primary"
       >
@@ -37,7 +37,7 @@
 
       </div>
 
-      <hr v-if="showDividerBeforeLast" class="last-divider" />
+      <hr v-if="showDividerBeforeLast" class="last-divider mb-3" />
       <form-nova-flexible-content-group
     v-if="lastGroup"
     :dusk="field.attribute + '-last'"
@@ -123,11 +123,10 @@ export default {
   },
 
   showDividerBeforeLast() {
-  
-    return this.orderedGroups.length > this.visibleCount; // Show divider if hiding items
+    return this.orderedGroups.length >  this.visibleCount + 1; // Show divider if hiding items
   },
     showLoadMoreButton() {
-      return this.paginate && this.visibleCount < this.orderedGroups.length;
+      return this.paginate && (this.visibleCount + 1 < this.orderedGroups.length);
     },
     limitCounter() {
       if (
@@ -289,7 +288,7 @@ export default {
 
       this.groups[group.key] = group;
       this.order.push(group.key);
-      if(!populate){
+      if(this.paginate && !populate){
         this.visibleCount ++;
       }
     },
