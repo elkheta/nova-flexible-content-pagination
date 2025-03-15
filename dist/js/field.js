@@ -188,41 +188,39 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     layouts: function layouts() {
       return this.field.layouts || false;
     },
-    filteredGroups: function filteredGroups() {
-      var _this = this;
-      if (!this.hasActiveTermFilter) {
-        return this.mainGroups;
-      }
-      return this.selectedTerm ? this.mainGroups.filter(function (group) {
-        return _this.matchesSelectedTerm(group);
-      }) : this.mainGroups;
-    },
     orderedGroups: function orderedGroups() {
-      var _this2 = this;
+      var _this = this;
       return this.order.reduce(function (groups, key) {
-        groups.push(_this2.groups[key]);
+        groups.push(_this.groups[key]);
         return groups;
       }, []);
     },
-    mainGroups: function mainGroups() {
-      if (this.paginate) {
-        return this.orderedGroups.slice(0, this.visibleCount);
-      } else {
-        return this.orderedGroups;
+    filteredGroupsFull: function filteredGroupsFull() {
+      var _this2 = this;
+      if (this.hasActiveTermFilter && this.selectedTerm) {
+        return this.orderedGroups.filter(function (group) {
+          return _this2.matchesSelectedTerm(group);
+        });
       }
+      return this.orderedGroups;
+    },
+    mainGroups: function mainGroups() {
+      var groups = this.filteredGroupsFull;
+      if (!this.paginate) {
+        return groups;
+      }
+      return groups.slice(0, this.visibleCount);
     },
     lastGroup: function lastGroup() {
-      var totalGroups = this.orderedGroups.length;
-      if (this.paginate && totalGroups > this.visibleCount) {
-        return this.orderedGroups[totalGroups - 1]; // Always return last group
+      var groups = this.filteredGroupsFull;
+      if (!this.paginate || groups.length <= this.visibleCount) {
+        return null;
       }
-      return null; // No last group needed if all are visible
-    },
-    showDividerBeforeLast: function showDividerBeforeLast() {
-      return this.orderedGroups.length > this.visibleCount + 1; // Show divider if hiding items
+      var displayed = groups.slice(0, this.visibleCount);
+      return groups[groups.length - 1];
     },
     showLoadMoreButton: function showLoadMoreButton() {
-      return this.paginate && this.visibleCount + 1 < this.orderedGroups.length;
+      return this.paginate && this.filteredGroupsFull.length > this.visibleCount + 1;
     },
     limitCounter: function limitCounter() {
       if (this.field.limit === null || typeof this.field.limit == "undefined") {
@@ -248,7 +246,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return this.field.paginate;
     },
     hasActiveTermFilter: function hasActiveTermFilter() {
-      return false;
+      return this.field.hasActiveTermFilter;
     }
   },
   watch: {
@@ -258,7 +256,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
   },
   methods: {
     loadMore: function loadMore() {
-      this.visibleCount += this.field.paginationCount || null;
+      this.visibleCount += this.field.paginationCount || 0;
     },
     matchesSelectedTerm: function matchesSelectedTerm(group) {
       var term = this.extractGroupTerm(group);
@@ -267,7 +265,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     extractGroupTerm: function extractGroupTerm(group) {
       var _group$fields$find;
       return (_group$fields$find = group.fields.find(function (f) {
-        return f.attribute.endsWith('__course_heading_active_term');
+        return f.attribute.endsWith('__course_heading_active_term') || f.attribute.endsWith('__lesson_active_term');
       })) === null || _group$fields$find === void 0 ? void 0 : _group$fields$find.value;
     },
     /*
@@ -360,7 +358,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.order.push(group.key);
       if (this.paginate && !populate) {
         this.visibleCount++;
-        this.selectedTerm = null;
       }
     },
     /**
@@ -974,7 +971,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         placeholder: "Filter by Active Term",
         "track-by": "value",
         searchable: true
-      }, null, 8 /* PROPS */, ["modelValue", "options"])])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_2, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.mainGroups, function (group, groupIndex) {
+      }, null, 8 /* PROPS */, ["modelValue", "options"])])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Main groups "), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_2, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.mainGroups, function (group, groupIndex) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
           dusk: _ctx.field.attribute + '-' + groupIndex,
           key: group.key,
@@ -995,12 +992,12 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             return $options.remove(group.key);
           }
         }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove"]);
-      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_3, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_3, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
         onClick: _cache[1] || (_cache[1] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
         }),
         "class": "btn btn-default btn-primary"
-      }, " Load More ")])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.showDividerBeforeLast ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("hr", _hoisted_4)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.lastGroup ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
+      }, " Load More ")])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Divider and last group "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("hr", _hoisted_4)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.lastGroup ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
         dusk: _ctx.field.attribute + '-last',
         key: $options.lastGroup.key,
         field: _ctx.field,
@@ -1433,13 +1430,12 @@ var Group = /*#__PURE__*/function () {
     key: "values",
     value: function values() {
       var formData = new FormData();
+      console.log(this.fields);
       for (var i = 0; i < this.fields.length; i++) {
         if (typeof this.fields[i].fill === 'function') {
           this.fields[i].fill(formData);
         } else {
-          // Ensure the field is included even if it's hidden
-          var fieldValue = this.fields[i].value || '';
-          formData.append(this.fields[i].attribute, fieldValue);
+          formData.append(this.fields[i].attribute, this.fields[i].value);
         }
       }
       return formData;

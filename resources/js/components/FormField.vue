@@ -9,7 +9,7 @@
   >
     <template #field>
 
-      <div v-if="hasActiveTermFilter" class="flexible-search-menu-multiselect">
+    <div v-if="hasActiveTermFilter" class="flexible-search-menu-multiselect">
       <Multiselect
           v-model="selectedTerm"
           :options="availableTerms"
@@ -17,53 +17,52 @@
           track-by="value"
           :searchable="true"
       />
-      </div>
+    </div>
 
-      <div ref="flexibleFieldContainer">
-        <form-nova-flexible-content-group
-            v-for="(group, groupIndex) in mainGroups"
-            :dusk="field.attribute + '-' + groupIndex"
-            :key="group.key"
-            :field="field"
-            :group="group"
-            :index="groupIndex"
-            :resource-name="resourceName"
-            :resource-id="resourceId"
-            :errors="errors"
-            :mode="mode"
-            @move-up="moveUp(group.key)"
-            @move-down="moveDown(group.key)"
-            @remove="remove(group.key)"
-        />
-      </div>
-      <div class="load-more-container"  v-if="showLoadMoreButton">
-        <div
-         
-          @click="loadMore"
-          class="btn btn-default btn-primary"
-      >
+    <!-- Main groups -->
+    <div ref="flexibleFieldContainer">
+      <form-nova-flexible-content-group
+          v-for="(group, groupIndex) in mainGroups"
+          :dusk="field.attribute + '-' + groupIndex"
+          :key="group.key"
+          :field="field"
+          :group="group"
+          :index="groupIndex"
+          :resource-name="resourceName"
+          :resource-id="resourceId"
+          :errors="errors"
+          :mode="mode"
+          @move-up="moveUp(group.key)"
+          @move-down="moveDown(group.key)"
+          @remove="remove(group.key)"
+      />
+    </div>
+
+    <!-- Load more button -->
+    <div class="load-more-container" v-if="showLoadMoreButton">
+      <div @click="loadMore" class="btn btn-default btn-primary">
         Load More
       </div>
+    </div>
 
-
-      </div>
-
-      <hr v-if="showDividerBeforeLast" class="last-divider mb-3" />
-      <form-nova-flexible-content-group
-    v-if="lastGroup"
-    :dusk="field.attribute + '-last'"
-    :key="lastGroup.key"
-    :field="field"
-    :group="lastGroup"
-    :index="orderedGroups.length - 1"
-    :resource-name="resourceName"
-    :resource-id="resourceId"
-    :errors="errors"
-    :mode="mode"
-    @move-up="moveUp(lastGroup.key)"
-    @move-down="moveDown(lastGroup.key)"
-    @remove="remove(lastGroup.key)"
-  />
+    <!-- Divider and last group -->
+    <hr v-if="showLoadMoreButton" class="last-divider mb-3" />
+    <form-nova-flexible-content-group
+      v-if="lastGroup"
+      :dusk="field.attribute + '-last'"
+      :key="lastGroup.key"
+      :field="field"
+      :group="lastGroup"
+      :index="orderedGroups.length - 1"
+      :resource-name="resourceName"
+      :resource-id="resourceId"
+      :errors="errors"
+      :mode="mode"
+      @move-up="moveUp(lastGroup.key)"
+      @move-down="moveDown(lastGroup.key)"
+      @remove="remove(lastGroup.key)"
+    />
+    
    
       <component
           :layouts="layouts"
@@ -116,41 +115,38 @@ export default {
     layouts() {
       return this.field.layouts || false;
     },
-    filteredGroups() {
-      if (!this.hasActiveTermFilter) {
-        return this.mainGroups;
-      }
-      return this.selectedTerm ? this.mainGroups.filter(group => this.matchesSelectedTerm(group)) : this.mainGroups;
-    },
+   
     orderedGroups() {
       return this.order.reduce((groups, key) => {
         groups.push(this.groups[key]);
         return groups;
       }, []);
     },
-    mainGroups() {
-      if (this.paginate) {
-        return this.orderedGroups.slice(0, this.visibleCount);
-      } else {
-        return this.orderedGroups;
-      }
-  },
-
-  lastGroup() {
-    let totalGroups = this.orderedGroups.length;
-    if (this.paginate && (totalGroups > this.visibleCount)) {
-      return this.orderedGroups[totalGroups - 1]; // Always return last group
+  filteredGroupsFull() {
+    if (this.hasActiveTermFilter && this.selectedTerm) {
+      return this.orderedGroups.filter(group => this.matchesSelectedTerm(group));
     }
-
-    return null; // No last group needed if all are visible
+    return this.orderedGroups;
+  },
+  mainGroups() {
+    const groups = this.filteredGroupsFull;
+    if (!this.paginate) {
+      return groups;
+    }
+    return groups.slice(0, this.visibleCount);
+  },
+  lastGroup() {
+    const groups = this.filteredGroupsFull;
+    if (!this.paginate || groups.length <= this.visibleCount) {
+      return null;
+    }
+    const displayed = groups.slice(0, this.visibleCount);
+    return groups[groups.length - 1];
   },
 
-  showDividerBeforeLast() {
-    return this.orderedGroups.length >  this.visibleCount + 1; // Show divider if hiding items
+  showLoadMoreButton() {
+    return this.paginate && (this.filteredGroupsFull.length > this.visibleCount + 1);
   },
-    showLoadMoreButton() {
-      return this.paginate && (this.visibleCount + 1 < this.orderedGroups.length);
-    },
     limitCounter() {
       if (
         this.field.limit === null ||
@@ -181,7 +177,7 @@ export default {
       return this.field.paginate;
     },
     hasActiveTermFilter() {
-      return false;
+      return this.field.hasActiveTermFilter;
     }
   },
   watch: {
@@ -192,7 +188,7 @@ export default {
 
   methods: {
     loadMore() {
-      this.visibleCount += this.field.paginationCount || null;
+      this.visibleCount += this.field.paginationCount || 0;
     },
     matchesSelectedTerm(group) {
       const term = this.extractGroupTerm(group);
@@ -200,7 +196,10 @@ export default {
     },
 
     extractGroupTerm(group) {
-      return group.fields.find(f => f.attribute.endsWith('__course_heading_active_term'))?.value;
+      return group.fields.find(
+            f => f.attribute.endsWith('__course_heading_active_term') ||
+            f.attribute.endsWith('__lesson_active_term')
+      )?.value;
     },
 
     /*
@@ -330,7 +329,6 @@ export default {
       this.order.push(group.key);
       if (this.paginate && !populate) {
         this.visibleCount++;
-        this.selectedTerm = null;
       }
     },
     
