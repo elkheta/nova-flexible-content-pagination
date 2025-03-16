@@ -148,6 +148,14 @@ class Flexible extends Field
     {
         return $this->withMeta(['hasActiveTermFilter' => $value]);
     }
+     /**
+     * @param bool $value
+     * @return Flexible
+     */
+    public function searchable(bool $value = true): Flexible
+    {
+        return $this->withMeta(['searchable' => $value]);
+    }
     /**
      * Get the initial items count.
      *
@@ -486,7 +494,7 @@ class Flexible extends Field
         if (! $value) {
             return;
         }
-
+        logger($value);
         if (! is_array($value)) {
             throw new \Exception('Unable to parse incoming Flexible content, data should be an array.');
         }

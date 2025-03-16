@@ -1,80 +1,46 @@
 <template>
-  <component
-      :dusk="field.attribute"
-      :is="field.fullWidth ? 'FullWidthField' : 'default-field'"
-      :field="field"
-      :errors="errors"
-      :show-help-text="showHelpText"
-      full-width-content
-  >
+  <component :dusk="field.attribute" :is="field.fullWidth ? 'FullWidthField' : 'default-field'" :field="field"
+    :errors="errors" :show-help-text="showHelpText" full-width-content>
     <template #field>
 
-    <div v-if="hasActiveTermFilter" class="flexible-search-menu-multiselect">
-      <Multiselect
-          v-model="selectedTerm"
-          :options="availableTerms"
-          placeholder="Filter by Active Term"
-          track-by="value"
-          :searchable="true"
-      />
-    </div>
-
-    <!-- Main groups -->
-    <div ref="flexibleFieldContainer">
-      <form-nova-flexible-content-group
-          v-for="(group, groupIndex) in mainGroups"
-          :dusk="field.attribute + '-' + groupIndex"
-          :key="group.key"
-          :field="field"
-          :group="group"
-          :index="groupIndex"
-          :resource-name="resourceName"
-          :resource-id="resourceId"
-          :errors="errors"
-          :mode="mode"
-          @move-up="moveUp(group.key)"
-          @move-down="moveDown(group.key)"
-          @remove="remove(group.key)"
-      />
-    </div>
-
-    <!-- Load more button -->
-    <div class="load-more-container" v-if="showLoadMoreButton">
-      <div @click="loadMore" class="btn btn-default btn-primary">
-        Load More
+      <div class="flex flex-row gap-4">
+        <div class="w-1/2" v-if="searchable">
+          <input v-model="searchName" @keyup="onSearchKeyUp" placeholder="Search by course/lesson name or label"
+            type="text" class="w-full form-control form-input form-control-bordered search-style" />
+        </div>
+        <div class="w-1/2" v-if="hasActiveTermFilter">
+          <Multiselect v-model="selectedTerm" :options="availableTerms" placeholder="Filter by Active Term"
+            track-by="value" :searchable="true" />
+        </div>
       </div>
-    </div>
 
-    <!-- Divider and last group -->
-    <hr v-if="showLoadMoreButton" class="last-divider mb-3" />
-    <form-nova-flexible-content-group
-      v-if="lastGroup"
-      :dusk="field.attribute + '-last'"
-      :key="lastGroup.key"
-      :field="field"
-      :group="lastGroup"
-      :index="orderedGroups.length - 1"
-      :resource-name="resourceName"
-      :resource-id="resourceId"
-      :errors="errors"
-      :mode="mode"
-      @move-up="moveUp(lastGroup.key)"
-      @move-down="moveDown(lastGroup.key)"
-      @remove="remove(lastGroup.key)"
-    />
-    
-   
-      <component
-          :layouts="layouts"
-          :is="field.menu.component"
-          :field="field"
-          :limit-counter="limitCounter"
-          :limit-per-layout-counter="limitPerLayoutCounter"
-          :errors="errors"
-          :resource-name="resourceName"
-          :resource-id="resourceId"
-          @addGroup="addGroup($event)"
-      />
+
+      <!-- Main groups -->
+      <div ref="flexibleFieldContainer">
+        <form-nova-flexible-content-group v-for="(group, groupIndex) in mainGroups"
+          :dusk="field.attribute + '-' + groupIndex" :key="group.key" :field="field" :group="group" :index="groupIndex"
+          :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
+          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" />
+      </div>
+
+      <!-- Load more button -->
+      <div class="load-more-container" v-if="showLoadMoreButton">
+        <div @click="loadMore" class="btn btn-default btn-primary">
+          Load More
+        </div>
+      </div>
+
+      <!-- Divider and last group -->
+      <hr v-if="showLoadMoreButton" class="last-divider mb-3" />
+      <form-nova-flexible-content-group v-if="lastGroup" :dusk="field.attribute + '-last'" :key="lastGroup.key"
+        :field="field" :group="lastGroup" :index="orderedGroups.length - 1" :resource-name="resourceName"
+        :resource-id="resourceId" :errors="errors" :mode="mode" @move-up="moveUp(lastGroup.key)"
+        @move-down="moveDown(lastGroup.key)" @remove="remove(lastGroup.key)" />
+
+
+      <component :layouts="layouts" :is="field.menu.component" :field="field" :limit-counter="limitCounter"
+        :limit-per-layout-counter="limitPerLayoutCounter" :errors="errors" :resource-name="resourceName"
+        :resource-id="resourceId" @addGroup="addGroup($event)" />
     </template>
   </component>
 </template>
@@ -93,7 +59,7 @@ export default {
     ...mapProps(["resourceName", "resourceId", "mode"]),
   },
 
-  components: {FullWidthField,Multiselect},
+  components: { FullWidthField, Multiselect },
 
   data() {
     return {
@@ -108,6 +74,8 @@ export default {
         { value: "FIRST_TERM", label: "First Term" },
         { value: "SECOND_TERM", label: "Second Term" }
       ],
+      searchable: this.field.searchable || null,
+      searchName: ''
     };
   },
 
@@ -115,38 +83,48 @@ export default {
     layouts() {
       return this.field.layouts || false;
     },
-   
+
     orderedGroups() {
       return this.order.reduce((groups, key) => {
         groups.push(this.groups[key]);
         return groups;
       }, []);
     },
-  filteredGroupsFull() {
-    if (this.hasActiveTermFilter && this.selectedTerm) {
-      return this.orderedGroups.filter(group => this.matchesSelectedTerm(group));
-    }
-    return this.orderedGroups;
-  },
-  mainGroups() {
-    const groups = this.filteredGroupsFull;
-    if (!this.paginate) {
-      return groups;
-    }
-    return groups.slice(0, this.visibleCount);
-  },
-  lastGroup() {
-    const groups = this.filteredGroupsFull;
-    if (!this.paginate || groups.length <= this.visibleCount) {
-      return null;
-    }
-    const displayed = groups.slice(0, this.visibleCount);
-    return groups[groups.length - 1];
-  },
+    filteredGroupsFull() {
+      return this.orderedGroups.filter(group => {
+        let termMatch = false;
+        let nameMatch = false;
+        let match = false;
+        if (this.hasActiveTermFilter && this.selectedTerm) {
+          termMatch = this.matchesSelectedTerm(group);
+          match = true;
+        }
+        if (this.searchable && this.searchName) {
+          nameMatch = this.matchesSearchName(group);
+          match = true;
+        }
+        return match ? termMatch || nameMatch : true;
+      });
+    },
+    mainGroups() {
+      const groups = this.filteredGroupsFull;
+      if (!this.paginate) {
+        return groups;
+      }
+      return groups.slice(0, this.visibleCount);
+    },
+    lastGroup() {
+      const groups = this.filteredGroupsFull;
+      if (!this.paginate || groups.length <= this.visibleCount) {
+        return null;
+      }
+      const displayed = groups.slice(0, this.visibleCount);
+      return groups[groups.length - 1];
+    },
 
-  showLoadMoreButton() {
-    return this.paginate && (this.filteredGroupsFull.length > this.visibleCount + 1);
-  },
+    showLoadMoreButton() {
+      return this.paginate && (this.filteredGroupsFull.length > this.visibleCount + 1);
+    },
     limitCounter() {
       if (
         this.field.limit === null ||
@@ -165,7 +143,7 @@ export default {
           return layoutCounts;
         }
         let count = Object.values(this.groups).filter(
-            (group) => group.name === layout.name,
+          (group) => group.name === layout.name,
         ).length;
 
         layoutCounts[layout.name] = layout.limit - count;
@@ -187,6 +165,9 @@ export default {
   },
 
   methods: {
+    onSearchKeyUp() {
+      this.filteredGroupsFull;
+    },
     loadMore() {
       this.visibleCount += this.field.paginationCount || 0;
     },
@@ -197,9 +178,20 @@ export default {
 
     extractGroupTerm(group) {
       return group.fields.find(
-            f => f.attribute.endsWith('__course_heading_active_term') ||
-            f.attribute.endsWith('__lesson_active_term')
+        f => f.attribute.endsWith('__course_heading_active_term') ||
+          f.attribute.endsWith('__lesson_active_term')
       )?.value;
+    },
+    matchesSearchName(group) {
+      const search = this.searchName.toLowerCase();
+      const nameString = group.fields
+        .filter(f => f.attribute.endsWith('__course_heading_name') ||
+          f.attribute.endsWith('__lesson_name') ||
+          f.attribute.endsWith('__lesson_label'))
+        .map(f => f.value || '')
+        .join(' ')
+        .toLowerCase();
+      return nameString.includes(search);
     },
 
     /*
@@ -331,7 +323,7 @@ export default {
         this.visibleCount++;
       }
     },
-    
+
 
     /**
      * Move a group up
@@ -413,5 +405,23 @@ export default {
   &:hover {
     transform: scale(1.1);
   }
+}
+
+.search-style {
+  height: 41px;
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  cursor: pointer;
+  outline: none;
+  border: var(--ms-border-width, 1px) solid var(--ms-border-color, #D1D5DB);
+  border-radius: var(--ms-radius, 4px);
+  background: var(--ms-bg, #FFFFFF);
+  font-size: var(--ms-font-size, 1rem);
+  min-height: calc(2* var(--ms-border-width, 1px) + var(--ms-font-size, 1rem)* var(--ms-line-height, 1.375) + 2* var(--ms-py, 0.5rem));
 }
 </style>
