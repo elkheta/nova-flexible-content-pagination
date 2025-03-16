@@ -1430,12 +1430,13 @@ var Group = /*#__PURE__*/function () {
     key: "values",
     value: function values() {
       var formData = new FormData();
-      console.log(this.fields);
       for (var i = 0; i < this.fields.length; i++) {
         if (typeof this.fields[i].fill === 'function') {
           this.fields[i].fill(formData);
         } else {
-          formData.append(this.fields[i].attribute, this.fields[i].value);
+          // Ensure the field is included even if it's hidden
+          var fieldValue = this.fields[i].value || '';
+          formData.append(this.fields[i].attribute, fieldValue);
         }
       }
       return formData;
