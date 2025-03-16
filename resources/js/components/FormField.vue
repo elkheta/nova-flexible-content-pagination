@@ -67,7 +67,9 @@ export default {
       groups: {},
       files: {},
       sortableInstance: null,
-      visibleCount: this.field.initialItemsCount || null,
+      visibleCount: this.field.initialItemsCount !== null
+      ? this.field.initialItemsCount - 1
+      : null,
       selectedTerm: null,
       availableTerms: [
         { value: "ALL", label: "All" },

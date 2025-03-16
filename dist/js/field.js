@@ -170,7 +170,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       groups: {},
       files: {},
       sortableInstance: null,
-      visibleCount: this.field.initialItemsCount || null,
+      visibleCount: this.field.initialItemsCount !== null ? this.field.initialItemsCount - 1 : null,
       selectedTerm: null,
       availableTerms: [{
         value: "ALL",
