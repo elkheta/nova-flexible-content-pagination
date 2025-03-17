@@ -170,7 +170,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       groups: {},
       files: {},
       sortableInstance: null,
-      visibleCount: this.field.initialItemsCount !== null ? this.field.initialItemsCount - 1 : null,
+      visibleCount: this.field.initialItemsCount !== null ? Math.max(this.field.initialItemsCount - 1, 1) : null,
       selectedTerm: null,
       availableTerms: [{
         value: "ALL",
@@ -1470,7 +1470,12 @@ var Group = /*#__PURE__*/function () {
     value: function values() {
       var formData = new FormData();
       for (var i = 0; i < this.fields.length; i++) {
-        this.fields[i].fill(formData);
+        if (typeof this.fields[i].fill === 'function') {
+          this.fields[i].fill(formData);
+        } else {
+          var fieldValue = this.fields[i].value || '';
+          formData.append(this.fields[i].attribute, fieldValue);
+        }
       }
       return formData;
     }

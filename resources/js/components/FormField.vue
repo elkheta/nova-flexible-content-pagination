@@ -68,7 +68,7 @@ export default {
       files: {},
       sortableInstance: null,
       visibleCount: this.field.initialItemsCount !== null
-      ? this.field.initialItemsCount - 1
+      ? Math.max(this.field.initialItemsCount - 1, 1)
       : null,
       selectedTerm: null,
       availableTerms: [

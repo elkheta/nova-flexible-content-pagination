@@ -16,10 +16,13 @@ export default class Group {
   values() {
     let formData = new FormData();
     for (var i = 0; i < this.fields.length; i++) {
-      this.fields[i].fill(formData);
+      if (typeof this.fields[i].fill === 'function') {
+        this.fields[i].fill(formData);
+      } else {
+          const fieldValue = this.fields[i].value || '';
+          formData.append(this.fields[i].attribute, fieldValue);
+      }
     }
-
-
     return formData;
   }
   /**
@@ -54,6 +57,7 @@ export default class Group {
     return data;
   }
 
+ 
   /**
    * Generate a unique string for current group
    */
