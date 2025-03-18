@@ -28,12 +28,12 @@ class Flexible extends Field
     /**
      * @var int
      */
-    public int $initialItemsCount = 5;
+    public int $initialItemsCount = 1;
 
     /**
      * @var int
      */
-    public int $paginationCount = 5;
+    public int $paginationCount = 1;
     
     /**
      * The available layouts collection
@@ -490,11 +490,11 @@ class Flexible extends Field
     {
         $value = $request[$attribute];
 
-
+        logger($value);
         if (! $value) {
             return;
         }
-        logger($value);
+        
         if (! is_array($value)) {
             throw new \Exception('Unable to parse incoming Flexible content, data should be an array.');
         }

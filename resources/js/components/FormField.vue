@@ -17,12 +17,24 @@
 
       <!-- Main groups -->
       <div ref="flexibleFieldContainer">
-        <form-nova-flexible-content-group v-for="(group, groupIndex) in mainGroups"
-          :dusk="field.attribute + '-' + groupIndex" :key="group.key" :field="field" :group="group" :index="groupIndex"
-          :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
-          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" />
+        <form-nova-flexible-content-group
+  v-for="(group, groupIndex) in mainGroups"
+  :dusk="field.attribute + '-' + groupIndex"
+  :key="group.key"
+  :field="field"
+  :group="group"
+  :index="groupIndex"
+  :resource-name="resourceName"
+  :resource-id="resourceId"
+  :errors="errors"
+  :mode="mode"
+  @move-up="moveUp(group.key)"
+  @move-down="moveDown(group.key)"
+  @remove="remove(group.key)"
+/>
       </div>
-
+     
+      
       <!-- Load more button -->
       <div class="load-more-container" v-if="showLoadMoreButton">
         <div @click="loadMore" class="btn btn-default btn-primary">
