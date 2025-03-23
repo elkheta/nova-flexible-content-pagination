@@ -146,12 +146,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var laravel_nova__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(laravel_nova__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _group__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../group */ "./resources/js/group.js");
 /* harmony import */ var _vueform_multiselect__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @vueform/multiselect */ "./node_modules/@vueform/multiselect/dist/multiselect.mjs");
+/* harmony import */ var _globalState__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../globalState */ "./resources/js/globalState.js");
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
 
 
 
@@ -172,6 +174,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       sortableInstance: null,
       visibleCount: this.field.initialItemsCount !== null ? Math.max(this.field.initialItemsCount - 1, 1) : null,
       selectedTerm: null,
+      loadAll: false,
       availableTerms: [{
         value: "ALL",
         label: "All"
@@ -215,6 +218,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       });
     },
     mainGroups: function mainGroups() {
+      if (this.paginate && this.loadAll) return this.orderedGroups.slice(0, this.orderedGroups.length - 1);
       var groups = this.filteredGroupsFull;
       if (!this.paginate) {
         return groups;
@@ -226,7 +230,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       if (!this.paginate || groups.length <= this.visibleCount) {
         return null;
       }
-      var displayed = groups.slice(0, this.visibleCount);
       return groups[groups.length - 1];
     },
     showLoadMoreButton: function showLoadMoreButton() {
@@ -433,7 +436,28 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           }
         }
       });
+    },
+    handleResourceUpdated: function handleResourceUpdated(event) {
+      var _this5 = this;
+      if (this.paginate) {
+        _globalState__WEBPACK_IMPORTED_MODULE_5__.globalState.isRendering = true;
+        if (this.order.length) {
+          this.loadAll = true;
+          var checkRendered = function checkRendered() {
+            _this5.$nextTick(function () {
+              Nova.$emit('before-update:done');
+            });
+          };
+          checkRendered();
+        }
+      }
     }
+  },
+  mounted: function mounted() {
+    if (this.paginate && _globalState__WEBPACK_IMPORTED_MODULE_5__.globalState.isRendering) {
+      this.loadAll = true;
+    }
+    Nova.$on('before-update', this.handleResourceUpdated);
   }
 });
 
@@ -1425,6 +1449,26 @@ Nova.booting(function (app) {
   app.component("flexible-drop-menu", (__webpack_require__(/*! ./components/OriginalDropMenu.vue */ "./resources/js/components/OriginalDropMenu.vue")["default"]));
   app.component("flexible-search-menu", (__webpack_require__(/*! ./components/SearchMenu.vue */ "./resources/js/components/SearchMenu.vue")["default"]));
   app.component("delete-flexible-content-group-modal", (__webpack_require__(/*! ./components/DeleteGroupModal.vue */ "./resources/js/components/DeleteGroupModal.vue")["default"]));
+});
+
+/***/ }),
+
+/***/ "./resources/js/globalState.js":
+/*!*************************************!*\
+  !*** ./resources/js/globalState.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   globalState: () => (/* binding */ globalState)
+/* harmony export */ });
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "vue");
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(vue__WEBPACK_IMPORTED_MODULE_0__);
+
+var globalState = (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)({
+  isRendering: false
 });
 
 /***/ }),

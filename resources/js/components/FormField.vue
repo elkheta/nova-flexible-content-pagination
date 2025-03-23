@@ -63,6 +63,7 @@ import Sortable from "sortablejs";
 import { DependentFormField, HandlesValidationErrors, mapProps, } from "laravel-nova";
 import Group from "../group";
 import Multiselect from "@vueform/multiselect";
+import { globalState } from '../globalState';
 
 export default {
   mixins: [HandlesValidationErrors, DependentFormField],
@@ -82,7 +83,9 @@ export default {
       visibleCount: this.field.initialItemsCount !== null
       ? Math.max(this.field.initialItemsCount - 1, 1)
       : null,
+
       selectedTerm: null,
+      loadAll: false,
       availableTerms: [
         { value: "ALL", label: "All" },
         { value: "FIRST_TERM", label: "First Term" },
@@ -121,6 +124,7 @@ export default {
       });
     },
     mainGroups() {
+      if(this.paginate && this.loadAll) return  this.orderedGroups.slice(0, this.orderedGroups.length - 1);
       const groups = this.filteredGroupsFull;
       if (!this.paginate) {
         return groups;
@@ -132,7 +136,6 @@ export default {
       if (!this.paginate || groups.length <= this.visibleCount) {
         return null;
       }
-      const displayed = groups.slice(0, this.visibleCount);
       return groups[groups.length - 1];
     },
 
@@ -175,7 +178,7 @@ export default {
   watch: {
     selectedTerm() {
       this.$forceUpdate();
-    }
+    },
   },
 
   methods: {
@@ -402,7 +405,35 @@ export default {
         },
       });
     },
+
+    handleResourceUpdated(event) {
+      if(this.paginate){
+        globalState.isRendering = true;
+        if (this.order.length) {
+          this.loadAll =  true;
+          const checkRendered = () => {
+            this.$nextTick(() => {  
+              Nova.$emit('before-update:done');
+            });
+          };
+
+        checkRendered(); 
+        }
+      }
+     
+    },
   },
+  mounted() {
+    
+    if(this.paginate && globalState.isRendering){
+      this.loadAll =  true;
+    }
+    Nova.$on('before-update', this.handleResourceUpdated);
+  },
+  
+
+
+
 };
 </script>
 <style lang="scss">
