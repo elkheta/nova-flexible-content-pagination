@@ -33,7 +33,7 @@
       <!-- Divider and last group -->
       <hr v-if="showLoadMoreButton" class="last-divider mb-3" />
       <form-nova-flexible-content-group v-if="lastGroup" :dusk="field.attribute + '-last'" :key="lastGroup.key"
-        :field="field" :group="lastGroup" :index="orderedGroups.length - 1" :resource-name="resourceName"
+        :field="field" :group="lastGroup" :index="filteredGroupsFull.length - 1" :resource-name="resourceName"
         :resource-id="resourceId" :errors="errors" :mode="mode" @move-up="moveUp(lastGroup.key)"
         @move-down="moveDown(lastGroup.key)" @remove="remove(lastGroup.key)" />
 

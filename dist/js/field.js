@@ -1113,7 +1113,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         key: $options.lastGroup.key,
         field: _ctx.field,
         group: $options.lastGroup,
-        index: $options.orderedGroups.length - 1,
+        index: $options.filteredGroupsFull.length - 1,
         "resource-name": _ctx.resourceName,
         "resource-id": _ctx.resourceId,
         errors: _ctx.errors,
