@@ -17,24 +17,12 @@
 
       <!-- Main groups -->
       <div ref="flexibleFieldContainer">
-        <form-nova-flexible-content-group
-  v-for="(group, groupIndex) in mainGroups"
-  :dusk="field.attribute + '-' + groupIndex"
-  :key="group.key"
-  :field="field"
-  :group="group"
-  :index="groupIndex"
-  :resource-name="resourceName"
-  :resource-id="resourceId"
-  :errors="errors"
-  :mode="mode"
-  @move-up="moveUp(group.key)"
-  @move-down="moveDown(group.key)"
-  @remove="remove(group.key)"
-/>
+        <form-nova-flexible-content-group v-for="(group, groupIndex) in mainGroups"
+          :dusk="field.attribute + '-' + groupIndex" :key="group.key" :field="field" :group="group" :index="groupIndex"
+          :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
+          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" />
       </div>
-     
-      
+
       <!-- Load more button -->
       <div class="load-more-container" v-if="showLoadMoreButton">
         <div @click="loadMore" class="btn btn-default btn-primary">
@@ -63,7 +51,6 @@ import Sortable from "sortablejs";
 import { DependentFormField, HandlesValidationErrors, mapProps, } from "laravel-nova";
 import Group from "../group";
 import Multiselect from "@vueform/multiselect";
-import { globalState } from '../globalState';
 
 export default {
   mixins: [HandlesValidationErrors, DependentFormField],
@@ -83,9 +70,7 @@ export default {
       visibleCount: this.field.initialItemsCount !== null
       ? Math.max(this.field.initialItemsCount - 1, 1)
       : null,
-
       selectedTerm: null,
-      loadAll: false,
       availableTerms: [
         { value: "ALL", label: "All" },
         { value: "FIRST_TERM", label: "First Term" },
@@ -124,7 +109,6 @@ export default {
       });
     },
     mainGroups() {
-      if(this.paginate && this.loadAll) return  this.orderedGroups.slice(0, this.orderedGroups.length - 1);
       const groups = this.filteredGroupsFull;
       if (!this.paginate) {
         return groups;
@@ -178,7 +162,7 @@ export default {
   watch: {
     selectedTerm() {
       this.$forceUpdate();
-    },
+    }
   },
 
   methods: {
@@ -186,7 +170,10 @@ export default {
       this.filteredGroupsFull;
     },
     loadMore() {
-      this.visibleCount += this.field.paginationCount || 0;
+      this.visibleCount = Math.min(
+      this.visibleCount + (this.field.paginationCount || 0),
+      this.orderedGroups.length - 1
+    );
     },
     matchesSelectedTerm(group) {
       const term = this.extractGroupTerm(group);
@@ -307,7 +294,60 @@ export default {
         );
       }
     },
+    processFields(fields, formData, parentAttributes = null) {
+  fields.forEach((field) => {
+    if (typeof field.fill !== 'function') {
+      field.fill = this.fill;
+    }
 
+    if (Array.isArray(field.value)) {
+      // If value is an array, recursively process it
+      let nestedArray = [];
+
+      field.value.forEach((subField, index) => {
+        if (subField.attributes) {
+          let subAttributes = {};
+          this.processFields(subField.attributes, formData, subAttributes);
+
+          // Append each nested field in groups (JSON ISSUE)
+
+          // if (parentAttributes) {
+          //   parentAttributes[field.attribute] = nestedArray;
+          // } else {
+          //   formData.append(field.attribute,nestedArray.length ? JSON.stringify(nestedArray) : ""); // Convert to JSON string
+          // }
+
+          // Append each nested field individually
+          if (parentAttributes) {
+            parentAttributes[`${field.attribute}[${index}]`] = {
+              layout: subField.layout,
+              key: subField.key,
+              attributes: subAttributes,
+            };
+          } else {
+            formData.append(`${field.attribute}[${index}][layout]`, subField.layout);
+            formData.append(`${field.attribute}[${index}][key]`, subField.key);
+            Object.keys(subAttributes).forEach((attrKey) => {
+              formData.append(`${field.attribute}[${index}][attributes][${attrKey}]`, subAttributes[attrKey]);
+            });
+          }
+        }
+      });
+
+      if (parentAttributes) {
+        parentAttributes[field.attribute] = nestedArray;
+      }
+    } else {
+      if (field.value !== null && field.value !== undefined) {
+        if (parentAttributes) {
+          parentAttributes[field.attribute] = field.value;
+        } else {
+          formData.append(field.attribute, field.value);
+        }
+      }
+    }
+  });
+},
     /**
      * Retrieve layout definition from its name
      */
@@ -324,8 +364,16 @@ export default {
 
       collapsed = collapsed || false;
 
-      let fields = attributes || JSON.parse(JSON.stringify(layout.fields)),
-        group = new Group(
+      let fields = attributes || JSON.parse(JSON.stringify(layout.fields));
+      for (let field of fields) {
+        if (typeof field.fill !== 'function') {
+          field.fill = (formData) => {
+            this.processFields(fields, formData);
+          };
+        }
+      }
+
+      let group = new Group(
           layout.name,
           layout.title,
           fields,
@@ -405,35 +453,7 @@ export default {
         },
       });
     },
-
-    handleResourceUpdated(event) {
-      if(this.paginate){
-        globalState.isRendering = true;
-        if (this.order.length) {
-          this.loadAll =  true;
-          const checkRendered = () => {
-            this.$nextTick(() => {  
-              Nova.$emit('before-update:done');
-            });
-          };
-
-        checkRendered(); 
-        }
-      }
-     
-    },
   },
-  mounted() {
-    
-    if(this.paginate && globalState.isRendering){
-      this.loadAll =  true;
-    }
-    Nova.$on('before-update', this.handleResourceUpdated);
-  },
-  
-
-
-
 };
 </script>
 <style lang="scss">

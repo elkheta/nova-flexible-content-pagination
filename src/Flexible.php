@@ -28,12 +28,12 @@ class Flexible extends Field
     /**
      * @var int
      */
-    public int $initialItemsCount = 1;
+    public int $initialItemsCount = 5;
 
     /**
      * @var int
      */
-    public int $paginationCount = 1;
+    public int $paginationCount = 5;
     
     /**
      * The available layouts collection

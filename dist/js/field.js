@@ -146,14 +146,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var laravel_nova__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(laravel_nova__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _group__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../group */ "./resources/js/group.js");
 /* harmony import */ var _vueform_multiselect__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @vueform/multiselect */ "./node_modules/@vueform/multiselect/dist/multiselect.mjs");
-/* harmony import */ var _globalState__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../globalState */ "./resources/js/globalState.js");
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-
 
 
 
@@ -174,7 +175,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       sortableInstance: null,
       visibleCount: this.field.initialItemsCount !== null ? Math.max(this.field.initialItemsCount - 1, 1) : null,
       selectedTerm: null,
-      loadAll: false,
       availableTerms: [{
         value: "ALL",
         label: "All"
@@ -218,7 +218,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       });
     },
     mainGroups: function mainGroups() {
-      if (this.paginate && this.loadAll) return this.orderedGroups.slice(0, this.orderedGroups.length - 1);
       var groups = this.filteredGroupsFull;
       if (!this.paginate) {
         return groups;
@@ -272,7 +271,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.filteredGroupsFull;
     },
     loadMore: function loadMore() {
-      this.visibleCount += this.field.paginationCount || 0;
+      this.visibleCount = Math.min(this.visibleCount + (this.field.paginationCount || 0), this.orderedGroups.length - 1);
     },
     matchesSelectedTerm: function matchesSelectedTerm(group) {
       var term = this.extractGroupTerm(group);
@@ -361,6 +360,59 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         this.addGroup(this.getLayout(this.value[i].layout), this.value[i].attributes, this.value[i].key, this.currentField.collapsed, true);
       }
     },
+    processFields: function processFields(fields, formData) {
+      var _this4 = this;
+      var parentAttributes = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      fields.forEach(function (field) {
+        if (typeof field.fill !== 'function') {
+          field.fill = _this4.fill;
+        }
+        if (Array.isArray(field.value)) {
+          // If value is an array, recursively process it
+          var nestedArray = [];
+          field.value.forEach(function (subField, index) {
+            if (subField.attributes) {
+              var subAttributes = {};
+              _this4.processFields(subField.attributes, formData, subAttributes);
+
+              // Append each nested field in groups (JSON ISSUE)
+
+              // if (parentAttributes) {
+              //   parentAttributes[field.attribute] = nestedArray;
+              // } else {
+              //   formData.append(field.attribute,nestedArray.length ? JSON.stringify(nestedArray) : ""); // Convert to JSON string
+              // }
+
+              // Append each nested field individually
+              if (parentAttributes) {
+                parentAttributes["".concat(field.attribute, "[").concat(index, "]")] = {
+                  layout: subField.layout,
+                  key: subField.key,
+                  attributes: subAttributes
+                };
+              } else {
+                formData.append("".concat(field.attribute, "[").concat(index, "][layout]"), subField.layout);
+                formData.append("".concat(field.attribute, "[").concat(index, "][key]"), subField.key);
+                Object.keys(subAttributes).forEach(function (attrKey) {
+                  formData.append("".concat(field.attribute, "[").concat(index, "][attributes][").concat(attrKey, "]"), subAttributes[attrKey]);
+                });
+              }
+            }
+          });
+          if (parentAttributes) {
+            parentAttributes[field.attribute] = nestedArray;
+          }
+        } else {
+          if (field.value !== null && field.value !== undefined) {
+            if (parentAttributes) {
+              parentAttributes[field.attribute] = field.value;
+            } else {
+              formData.append(field.attribute, field.value);
+            }
+          }
+        }
+      });
+    },
     /**
      * Retrieve layout definition from its name
      */
@@ -374,11 +426,28 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Append the given layout to flexible content's list
      */
     addGroup: function addGroup(layout, attributes, key, collapsed) {
+      var _this5 = this;
       var populate = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
       if (!layout) return;
       collapsed = collapsed || false;
-      var fields = attributes || JSON.parse(JSON.stringify(layout.fields)),
-        group = new _group__WEBPACK_IMPORTED_MODULE_3__["default"](layout.name, layout.title, fields, this.currentField, key, collapsed);
+      var fields = attributes || JSON.parse(JSON.stringify(layout.fields));
+      var _iterator = _createForOfIteratorHelper(fields),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var field = _step.value;
+          if (typeof field.fill !== 'function') {
+            field.fill = function (formData) {
+              _this5.processFields(fields, formData);
+            };
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      var group = new _group__WEBPACK_IMPORTED_MODULE_3__["default"](layout.name, layout.title, fields, this.currentField, key, collapsed);
       this.groups[group.key] = group;
       this.order.push(group.key);
       if (this.paginate && !populate) {
@@ -411,7 +480,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       delete this.groups[key];
     },
     initSortable: function initSortable() {
-      var _this4 = this;
+      var _this6 = this;
       var containerRef = this.$refs["flexibleFieldContainer"];
       if (!containerRef || this.sortableInstance) {
         return;
@@ -430,34 +499,13 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           var oldIndex = evt.oldIndex;
           var newIndex = evt.newIndex;
           if (newIndex < oldIndex) {
-            _this4.moveUp(key);
+            _this6.moveUp(key);
           } else if (newIndex > oldIndex) {
-            _this4.moveDown(key);
+            _this6.moveDown(key);
           }
         }
       });
-    },
-    handleResourceUpdated: function handleResourceUpdated(event) {
-      var _this5 = this;
-      if (this.paginate) {
-        _globalState__WEBPACK_IMPORTED_MODULE_5__.globalState.isRendering = true;
-        if (this.order.length) {
-          this.loadAll = true;
-          var checkRendered = function checkRendered() {
-            _this5.$nextTick(function () {
-              Nova.$emit('before-update:done');
-            });
-          };
-          checkRendered();
-        }
-      }
     }
-  },
-  mounted: function mounted() {
-    if (this.paginate && _globalState__WEBPACK_IMPORTED_MODULE_5__.globalState.isRendering) {
-      this.loadAll = true;
-    }
-    Nova.$on('before-update', this.handleResourceUpdated);
   }
 });
 
@@ -1449,26 +1497,6 @@ Nova.booting(function (app) {
   app.component("flexible-drop-menu", (__webpack_require__(/*! ./components/OriginalDropMenu.vue */ "./resources/js/components/OriginalDropMenu.vue")["default"]));
   app.component("flexible-search-menu", (__webpack_require__(/*! ./components/SearchMenu.vue */ "./resources/js/components/SearchMenu.vue")["default"]));
   app.component("delete-flexible-content-group-modal", (__webpack_require__(/*! ./components/DeleteGroupModal.vue */ "./resources/js/components/DeleteGroupModal.vue")["default"]));
-});
-
-/***/ }),
-
-/***/ "./resources/js/globalState.js":
-/*!*************************************!*\
-  !*** ./resources/js/globalState.js ***!
-  \*************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   globalState: () => (/* binding */ globalState)
-/* harmony export */ });
-/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "vue");
-/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(vue__WEBPACK_IMPORTED_MODULE_0__);
-
-var globalState = (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)({
-  isRendering: false
 });
 
 /***/ }),
