@@ -28,6 +28,7 @@
       dusk="toggle-layouts-dropdown-or-add-default"
       type="button"
       tabindex="0"
+      :disabled="isWorking"
       ref="dropdownButton"
       @click="toggleLayoutsDropdownOrAddDefault"
       v-if="isBelowLayoutLimits"
@@ -60,6 +61,7 @@ export default {
     return {
       isLayoutsDropdownOpen: false,
       dropdownOrientation: "bottom",
+      isWorking:false
     };
   },
 
@@ -130,6 +132,12 @@ export default {
       // Reset the orientation.
       this.dropdownOrientation = "top";
     },
+    setUpdateButton(state) {
+    this.isWorking = state;
+  },
+  },
+  mounted(){
+    Nova.$on('set-button-state', this.setUpdateButton);
   },
 };
 </script>

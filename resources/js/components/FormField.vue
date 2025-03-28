@@ -32,10 +32,11 @@
 
       <!-- Divider and last group -->
       <hr v-if="showLoadMoreButton" class="last-divider mb-3" />
-      <form-nova-flexible-content-group v-if="lastGroup" :dusk="field.attribute + '-last'" :key="lastGroup.key"
+        <form-nova-flexible-content-group v-if="lastGroup" :dusk="field.attribute + '-last'" :key="lastGroup.key"
         :field="field" :group="lastGroup" :index="filteredGroupsFull.length - 1" :resource-name="resourceName"
         :resource-id="resourceId" :errors="errors" :mode="mode" @move-up="moveUp(lastGroup.key)"
         @move-down="moveDown(lastGroup.key)" @remove="remove(lastGroup.key)" />
+ 
 
 
       <component :layouts="layouts" :is="field.menu.component" :field="field" :limit-counter="limitCounter"
@@ -70,6 +71,7 @@ export default {
       visibleCount: this.field.initialItemsCount !== null
       ? Math.max(this.field.initialItemsCount - 1, 1)
       : null,
+
       selectedTerm: null,
       availableTerms: [
         { value: "ALL", label: "All" },
@@ -77,7 +79,8 @@ export default {
         { value: "SECOND_TERM", label: "Second Term" }
       ],
       searchable: this.field.searchable || null,
-      searchName: ''
+      searchName: '',
+    
     };
   },
 
@@ -110,21 +113,22 @@ export default {
     },
     mainGroups() {
       const groups = this.filteredGroupsFull;
-      if (!this.paginate) {
+  
+      if (!(this.paginate())) {
         return groups;
       }
       return groups.slice(0, this.visibleCount);
     },
     lastGroup() {
       const groups = this.filteredGroupsFull;
-      if (!this.paginate || groups.length <= this.visibleCount) {
+      if (!this.paginate() || groups.length <= this.visibleCount) {
         return null;
       }
       return groups[groups.length - 1];
     },
 
     showLoadMoreButton() {
-      return this.paginate && (this.filteredGroupsFull.length > this.visibleCount + 1);
+      return this.paginate() && (this.filteredGroupsFull.length > this.visibleCount + 1);
     },
     limitCounter() {
       if (
@@ -152,22 +156,37 @@ export default {
         return layoutCounts;
       }, {});
     },
-    paginate() {
-      return this.field.paginate;
-    },
+   
     hasActiveTermFilter() {
       return this.field.hasActiveTermFilter;
     }
   },
   watch: {
+    searchName() {
+      this.emitButtonState();
+    },
     selectedTerm() {
-      this.$forceUpdate();
-    }
+      this.emitButtonState();
+    },
+    
   },
 
   methods: {
+    paginate() {
+      return this.field.paginate;
+    },
     onSearchKeyUp() {
       this.filteredGroupsFull;
+    },
+    emitButtonState() {
+      console.log(this.searchName,this.selectedTerm);
+      
+      if (this.searchName == "" && this.selectedTerm == null) {
+        Nova.$emit('set-button-state', false);
+      } else {
+        Nova.$emit('set-button-state', true);
+      }
+     
     },
     loadMore() {
       this.visibleCount = Math.min(
@@ -204,7 +223,6 @@ export default {
     setInitialValue() {
       this.value = this.currentField.value || [];
       this.files = {};
-
       this.populateGroups();
       this.$nextTick(this.initSortable.bind(this));
     },
@@ -217,9 +235,16 @@ export default {
 
       this.value = [];
       this.files = {};
-
+      
       for (var i = 0; i < this.order.length; i++) {
         key = this.order[i];
+        
+        var isShown =[...this.mainGroups, this.lastGroup].find(group => group?.key === key);
+       
+        console.log(key,isShown);
+        if(!isShown){
+          continue ;
+        }
         group = this.groups[key].serialize();
 
         // Only serialize the group's non-file attributes
@@ -227,6 +252,7 @@ export default {
           layout: group.layout,
           key: group.key,
           attributes: group.attributes,
+
         });
 
         // Attach the files for formData appending
@@ -273,17 +299,18 @@ export default {
     handleChange(value) {
       this.value = value || [];
       this.files = {};
-
+      
       this.populateGroups();
+      
     },
 
     /**
      * Set the displayed layouts from the field's current value
      */
     populateGroups() {
+  
       this.order.splice(0, this.order.length);
       this.groups = {};
-
       for (var i = 0; i < this.value.length; i++) {
         this.addGroup(
           this.getLayout(this.value[i].layout),
@@ -294,60 +321,7 @@ export default {
         );
       }
     },
-    processFields(fields, formData, parentAttributes = null) {
-  fields.forEach((field) => {
-    if (typeof field.fill !== 'function') {
-      field.fill = this.fill;
-    }
-
-    if (Array.isArray(field.value)) {
-      // If value is an array, recursively process it
-      let nestedArray = [];
-
-      field.value.forEach((subField, index) => {
-        if (subField.attributes) {
-          let subAttributes = {};
-          this.processFields(subField.attributes, formData, subAttributes);
-
-          // Append each nested field in groups (JSON ISSUE)
-
-          // if (parentAttributes) {
-          //   parentAttributes[field.attribute] = nestedArray;
-          // } else {
-          //   formData.append(field.attribute,nestedArray.length ? JSON.stringify(nestedArray) : ""); // Convert to JSON string
-          // }
-
-          // Append each nested field individually
-          if (parentAttributes) {
-            parentAttributes[`${field.attribute}[${index}]`] = {
-              layout: subField.layout,
-              key: subField.key,
-              attributes: subAttributes,
-            };
-          } else {
-            formData.append(`${field.attribute}[${index}][layout]`, subField.layout);
-            formData.append(`${field.attribute}[${index}][key]`, subField.key);
-            Object.keys(subAttributes).forEach((attrKey) => {
-              formData.append(`${field.attribute}[${index}][attributes][${attrKey}]`, subAttributes[attrKey]);
-            });
-          }
-        }
-      });
-
-      if (parentAttributes) {
-        parentAttributes[field.attribute] = nestedArray;
-      }
-    } else {
-      if (field.value !== null && field.value !== undefined) {
-        if (parentAttributes) {
-          parentAttributes[field.attribute] = field.value;
-        } else {
-          formData.append(field.attribute, field.value);
-        }
-      }
-    }
-  });
-},
+   
     /**
      * Retrieve layout definition from its name
      */
@@ -365,13 +339,7 @@ export default {
       collapsed = collapsed || false;
 
       let fields = attributes || JSON.parse(JSON.stringify(layout.fields));
-      for (let field of fields) {
-        if (typeof field.fill !== 'function') {
-          field.fill = (formData) => {
-            this.processFields(fields, formData);
-          };
-        }
-      }
+
 
       let group = new Group(
           layout.name,
@@ -384,7 +352,7 @@ export default {
 
       this.groups[group.key] = group;
       this.order.push(group.key);
-      if (this.paginate && !populate) {
+      if (this.paginate() && !populate) {
         this.visibleCount++;
       }
     },
@@ -453,7 +421,7 @@ export default {
         },
       });
     },
-  },
+  }
 };
 </script>
 <style lang="scss">

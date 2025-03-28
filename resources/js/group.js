@@ -1,6 +1,7 @@
 export default class Group {
   constructor(name, title, fields, field, key, collapsed = true) {
     this.name = name;
+    
     this.title = title;
     this.fields = fields;
     this.key = key || this.getTemporaryUniqueKey(field.attribute);
@@ -15,7 +16,6 @@ export default class Group {
    */
   values() {
     let formData = new FormData();
-    console.log(this.fields);
     for (var i = 0; i < this.fields.length; i++) {
       this.fields[i].fill(formData);
     }
@@ -78,8 +78,10 @@ export default class Group {
    */
   renameFields() {
     for (var i = this.fields.length - 1; i >= 0; i--) {
+      if(this.fields[i].encrypted) continue;
       this.fields[i].attribute = this.key + "__" + this.fields[i].attribute;
       this.fields[i].validationKey = this.fields[i].attribute;
+      this.fields[i].encrypted = true;
 
       if (this.fields[i].dependsOn) {
         Object.keys(this.fields[i].dependsOn).forEach((key) => {

@@ -147,8 +147,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _group__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../group */ "./resources/js/group.js");
 /* harmony import */ var _vueform_multiselect__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @vueform/multiselect */ "./node_modules/@vueform/multiselect/dist/multiselect.mjs");
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
-function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
@@ -219,20 +222,20 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     },
     mainGroups: function mainGroups() {
       var groups = this.filteredGroupsFull;
-      if (!this.paginate) {
+      if (!this.paginate()) {
         return groups;
       }
       return groups.slice(0, this.visibleCount);
     },
     lastGroup: function lastGroup() {
       var groups = this.filteredGroupsFull;
-      if (!this.paginate || groups.length <= this.visibleCount) {
+      if (!this.paginate() || groups.length <= this.visibleCount) {
         return null;
       }
       return groups[groups.length - 1];
     },
     showLoadMoreButton: function showLoadMoreButton() {
-      return this.paginate && this.filteredGroupsFull.length > this.visibleCount + 1;
+      return this.paginate() && this.filteredGroupsFull.length > this.visibleCount + 1;
     },
     limitCounter: function limitCounter() {
       if (this.field.limit === null || typeof this.field.limit == "undefined") {
@@ -254,21 +257,32 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         return layoutCounts;
       }, {});
     },
-    paginate: function paginate() {
-      return this.field.paginate;
-    },
     hasActiveTermFilter: function hasActiveTermFilter() {
       return this.field.hasActiveTermFilter;
     }
   },
   watch: {
+    searchName: function searchName() {
+      this.emitButtonState();
+    },
     selectedTerm: function selectedTerm() {
-      this.$forceUpdate();
+      this.emitButtonState();
     }
   },
   methods: {
+    paginate: function paginate() {
+      return this.field.paginate;
+    },
     onSearchKeyUp: function onSearchKeyUp() {
       this.filteredGroupsFull;
+    },
+    emitButtonState: function emitButtonState() {
+      console.log(this.searchName, this.selectedTerm);
+      if (this.searchName == "" && this.selectedTerm == null) {
+        Nova.$emit('set-button-state', false);
+      } else {
+        Nova.$emit('set-button-state', true);
+      }
     },
     loadMore: function loadMore() {
       this.visibleCount = Math.min(this.visibleCount + (this.field.paginationCount || 0), this.orderedGroups.length - 1);
@@ -310,6 +324,13 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.files = {};
       for (var i = 0; i < this.order.length; i++) {
         key = this.order[i];
+        var isShown = [].concat(_toConsumableArray(this.mainGroups), [this.lastGroup]).find(function (group) {
+          return (group === null || group === void 0 ? void 0 : group.key) === key;
+        });
+        console.log(key, isShown);
+        if (!isShown) {
+          continue;
+        }
         group = this.groups[key].serialize();
 
         // Only serialize the group's non-file attributes
@@ -360,59 +381,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         this.addGroup(this.getLayout(this.value[i].layout), this.value[i].attributes, this.value[i].key, this.currentField.collapsed, true);
       }
     },
-    processFields: function processFields(fields, formData) {
-      var _this4 = this;
-      var parentAttributes = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      fields.forEach(function (field) {
-        if (typeof field.fill !== 'function') {
-          field.fill = _this4.fill;
-        }
-        if (Array.isArray(field.value)) {
-          // If value is an array, recursively process it
-          var nestedArray = [];
-          field.value.forEach(function (subField, index) {
-            if (subField.attributes) {
-              var subAttributes = {};
-              _this4.processFields(subField.attributes, formData, subAttributes);
-
-              // Append each nested field in groups (JSON ISSUE)
-
-              // if (parentAttributes) {
-              //   parentAttributes[field.attribute] = nestedArray;
-              // } else {
-              //   formData.append(field.attribute,nestedArray.length ? JSON.stringify(nestedArray) : ""); // Convert to JSON string
-              // }
-
-              // Append each nested field individually
-              if (parentAttributes) {
-                parentAttributes["".concat(field.attribute, "[").concat(index, "]")] = {
-                  layout: subField.layout,
-                  key: subField.key,
-                  attributes: subAttributes
-                };
-              } else {
-                formData.append("".concat(field.attribute, "[").concat(index, "][layout]"), subField.layout);
-                formData.append("".concat(field.attribute, "[").concat(index, "][key]"), subField.key);
-                Object.keys(subAttributes).forEach(function (attrKey) {
-                  formData.append("".concat(field.attribute, "[").concat(index, "][attributes][").concat(attrKey, "]"), subAttributes[attrKey]);
-                });
-              }
-            }
-          });
-          if (parentAttributes) {
-            parentAttributes[field.attribute] = nestedArray;
-          }
-        } else {
-          if (field.value !== null && field.value !== undefined) {
-            if (parentAttributes) {
-              parentAttributes[field.attribute] = field.value;
-            } else {
-              formData.append(field.attribute, field.value);
-            }
-          }
-        }
-      });
-    },
     /**
      * Retrieve layout definition from its name
      */
@@ -426,31 +394,14 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Append the given layout to flexible content's list
      */
     addGroup: function addGroup(layout, attributes, key, collapsed) {
-      var _this5 = this;
       var populate = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
       if (!layout) return;
       collapsed = collapsed || false;
       var fields = attributes || JSON.parse(JSON.stringify(layout.fields));
-      var _iterator = _createForOfIteratorHelper(fields),
-        _step;
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var field = _step.value;
-          if (typeof field.fill !== 'function') {
-            field.fill = function (formData) {
-              _this5.processFields(fields, formData);
-            };
-          }
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
       var group = new _group__WEBPACK_IMPORTED_MODULE_3__["default"](layout.name, layout.title, fields, this.currentField, key, collapsed);
       this.groups[group.key] = group;
       this.order.push(group.key);
-      if (this.paginate && !populate) {
+      if (this.paginate() && !populate) {
         this.visibleCount++;
       }
     },
@@ -480,7 +431,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       delete this.groups[key];
     },
     initSortable: function initSortable() {
-      var _this6 = this;
+      var _this4 = this;
       var containerRef = this.$refs["flexibleFieldContainer"];
       if (!containerRef || this.sortableInstance) {
         return;
@@ -499,9 +450,9 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           var oldIndex = evt.oldIndex;
           var newIndex = evt.newIndex;
           if (newIndex < oldIndex) {
-            _this6.moveUp(key);
+            _this4.moveUp(key);
           } else if (newIndex > oldIndex) {
-            _this6.moveDown(key);
+            _this4.moveDown(key);
           }
         }
       });
@@ -689,7 +640,8 @@ __webpack_require__.r(__webpack_exports__);
   data: function data() {
     return {
       isLayoutsDropdownOpen: false,
-      dropdownOrientation: "bottom"
+      dropdownOrientation: "bottom",
+      isWorking: false
     };
   },
   computed: {
@@ -749,7 +701,13 @@ __webpack_require__.r(__webpack_exports__);
 
       // Reset the orientation.
       this.dropdownOrientation = "top";
+    },
+    setUpdateButton: function setUpdateButton(state) {
+      this.isWorking = state;
     }
+  },
+  mounted: function mounted() {
+    Nova.$on('set-button-state', this.setUpdateButton);
   }
 });
 
@@ -1404,6 +1362,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     dusk: "toggle-layouts-dropdown-or-add-default",
     type: "button",
     tabindex: "0",
+    disabled: $data.isWorking,
     ref: "dropdownButton",
     onClick: $options.toggleLayoutsDropdownOrAddDefault
   }, {
@@ -1411,7 +1370,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
       return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.field.button), 1 /* TEXT */)];
     }),
     _: 1 /* STABLE */
-  }, 8 /* PROPS */, ["onClick"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true);
+  }, 8 /* PROPS */, ["disabled", "onClick"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true);
 }
 
 /***/ }),
@@ -1541,7 +1500,6 @@ var Group = /*#__PURE__*/function () {
     key: "values",
     value: function values() {
       var formData = new FormData();
-      console.log(this.fields);
       for (var i = 0; i < this.fields.length; i++) {
         this.fields[i].fill(formData);
       }
@@ -1615,8 +1573,10 @@ var Group = /*#__PURE__*/function () {
     value: function renameFields() {
       var _this = this;
       for (var i = this.fields.length - 1; i >= 0; i--) {
+        if (this.fields[i].encrypted) continue;
         this.fields[i].attribute = this.key + "__" + this.fields[i].attribute;
         this.fields[i].validationKey = this.fields[i].attribute;
+        this.fields[i].encrypted = true;
         if (this.fields[i].dependsOn) {
           Object.keys(this.fields[i].dependsOn).forEach(function (key) {
             _this.fields[i].dependsOn["".concat(_this.key, "__").concat(key)] = _this.fields[i].dependsOn[key];
