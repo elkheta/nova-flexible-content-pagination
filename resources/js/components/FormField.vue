@@ -20,7 +20,7 @@
         <form-nova-flexible-content-group v-for="(group, groupIndex) in mainGroups"
           :dusk="field.attribute + '-' + groupIndex" :key="group.key" :field="field" :group="group" :index="groupIndex"
           :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
-          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" />
+          @move-up="moveUp(group.key)" @move-down="moveDown(group.key,groupIndex)" @remove="remove(group.key)" />
       </div>
 
       <!-- Load more button -->
@@ -34,8 +34,7 @@
       <hr v-if="showLoadMoreButton" class="last-divider mb-3" />
         <form-nova-flexible-content-group v-if="lastGroup" :dusk="field.attribute + '-last'" :key="lastGroup.key"
         :field="field" :group="lastGroup" :index="filteredGroupsFull.length - 1" :resource-name="resourceName"
-        :resource-id="resourceId" :errors="errors" :mode="mode" @move-up="moveUp(lastGroup.key)"
-        @move-down="moveDown(lastGroup.key)" @remove="remove(lastGroup.key)" />
+        :resource-id="resourceId" :errors="errors" :mode="mode" @remove="remove(lastGroup.key)" :moveUpStatus="false" :moveDownStatus="false" />
  
 
 
@@ -372,12 +371,19 @@ export default {
     /**
      * Move a group down
      */
-    moveDown(key) {
+    moveDown(key,shownIndex = false) {
       let index = this.order.indexOf(key);
 
       if (index < 0 || index >= this.order.length - 1) return;
 
       this.order.splice(index + 1, 0, this.order.splice(index, 1)[0]);
+
+      if(shownIndex + 1 == this.mainGroups.length){
+        this.visibleCount = Math.min(
+        this.visibleCount + (this.field.paginationCount || 0),
+        this.orderedGroups.length - 1
+        );
+      }
     },
 
     /**

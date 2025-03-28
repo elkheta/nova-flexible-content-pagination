@@ -417,9 +417,13 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Move a group down
      */
     moveDown: function moveDown(key) {
+      var shownIndex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var index = this.order.indexOf(key);
       if (index < 0 || index >= this.order.length - 1) return;
       this.order.splice(index + 1, 0, this.order.splice(index, 1)[0]);
+      if (shownIndex + 1 == this.mainGroups.length) {
+        this.visibleCount = Math.min(this.visibleCount + (this.field.paginationCount || 0), this.orderedGroups.length - 1);
+      }
     },
     /**
      * Remove a group
@@ -493,7 +497,15 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     errors: {},
     group: {},
     index: {},
-    field: {}
+    field: {},
+    moveUpStatus: {
+      type: Boolean,
+      "default": true
+    },
+    moveDownStatus: {
+      type: Boolean,
+      "default": true
+    }
   }, (0,laravel_nova__WEBPACK_IMPORTED_MODULE_0__.mapProps)(["resourceName", "resourceId", "mode"])),
   emits: ["move-up", "move-down", "remove"],
   data: function data() {
@@ -1055,7 +1067,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             return $options.moveUp(group.key);
           },
           onMoveDown: function onMoveDown($event) {
-            return $options.moveDown(group.key);
+            return $options.moveDown(group.key, groupIndex);
           },
           onRemove: function onRemove($event) {
             return $options.remove(group.key);
@@ -1076,15 +1088,11 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         "resource-id": _ctx.resourceId,
         errors: _ctx.errors,
         mode: _ctx.mode,
-        onMoveUp: _cache[4] || (_cache[4] = function ($event) {
-          return $options.moveUp($options.lastGroup.key);
-        }),
-        onMoveDown: _cache[5] || (_cache[5] = function ($event) {
-          return $options.moveDown($options.lastGroup.key);
-        }),
-        onRemove: _cache[6] || (_cache[6] = function ($event) {
+        onRemove: _cache[4] || (_cache[4] = function ($event) {
           return $options.remove($options.lastGroup.key);
-        })
+        }),
+        moveUpStatus: false,
+        moveDownStatus: false
       }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
         layouts: $options.layouts,
         field: _ctx.field,
@@ -1093,7 +1101,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         errors: _ctx.errors,
         "resource-name": _ctx.resourceName,
         "resource-id": _ctx.resourceId,
-        onAddGroup: _cache[7] || (_cache[7] = function ($event) {
+        onAddGroup: _cache[5] || (_cache[5] = function ($event) {
           return $options.addGroup($event);
         })
       }, null, 40 /* PROPS, NEED_HYDRATION */, ["layouts", "field", "limit-counter", "limit-per-layout-counter", "errors", "resource-name", "resource-id"]))];
@@ -1186,7 +1194,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "selector",
     type: "micro",
     "class": "align-top"
-  })], 8 /* PROPS */, _hoisted_8), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+  })], 8 /* PROPS */, _hoisted_8), $props.moveUpStatus ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+    key: 0,
     dusk: "move-up-group",
     type: "button",
     "class": "group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center",
@@ -1198,7 +1207,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "arrow-up",
     type: "micro",
     "class": "align-top"
-  })], 8 /* PROPS */, _hoisted_9), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+  })], 8 /* PROPS */, _hoisted_9)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.moveDownStatus ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+    key: 1,
     dusk: "move-down-group",
     type: "button",
     "class": "group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center",
@@ -1210,7 +1220,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "arrow-down",
     "class": "align-top",
     type: "micro"
-  })], 8 /* PROPS */, _hoisted_10), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+  })], 8 /* PROPS */, _hoisted_10)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
     dusk: "delete-group",
     type: "button",
     "class": "group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center",
@@ -1223,7 +1233,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     "class": "align-top",
     type: "micro"
   })], 8 /* PROPS */, _hoisted_11), $data.removeMessage ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_delete_flexible_content_group_modal, {
-    key: 0,
+    key: 2,
     onConfirm: $options.remove,
     onClose: _cache[5] || (_cache[5] = function ($event) {
       return $data.removeMessage = false;

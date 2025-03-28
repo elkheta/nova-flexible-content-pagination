@@ -55,6 +55,7 @@
             <button
               dusk="move-up-group"
               type="button"
+              v-if="moveUpStatus"
               class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
               :title="__('Move up')"
               @click.prevent="moveUp"
@@ -66,6 +67,7 @@
             </button>
             <button
               dusk="move-down-group"
+              v-if="moveDownStatus"
               type="button"
               class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
               :title="__('Move down')"
@@ -128,6 +130,14 @@ export default {
     group: {},
     index: {},
     field: {},
+    moveUpStatus: {
+      type: Boolean,
+      default: true,
+    },
+    moveDownStatus: {
+      type: Boolean,
+      default: true,
+    },
     ...mapProps(["resourceName", "resourceId", "mode"]),
   },
 
