@@ -175,6 +175,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       order: [],
       groups: {},
       files: {},
+      initialGroupsCount: 1,
       sortableInstance: null,
       visibleCount: this.field.initialItemsCount !== null ? Math.max(this.field.initialItemsCount - 1, 1) : null,
       selectedTerm: null,
@@ -227,15 +228,18 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       }
       return groups.slice(0, this.visibleCount);
     },
-    lastGroup: function lastGroup() {
+    lastGroups: function lastGroups() {
       var groups = this.filteredGroupsFull;
       if (!this.paginate() || groups.length <= this.visibleCount) {
         return null;
       }
-      return groups[groups.length - 1];
+      return groups.slice(-this.initialGroupsCount);
     },
     showLoadMoreButton: function showLoadMoreButton() {
-      return this.paginate() && this.filteredGroupsFull.length > this.visibleCount + 1;
+      return this.paginate() && this.filteredGroupsFull.length > this.visibleCount + this.initialGroupsCount;
+    },
+    computedMoveStatus: function computedMoveStatus() {
+      return !this.showLoadMoreButton;
     },
     limitCounter: function limitCounter() {
       if (this.field.limit === null || typeof this.field.limit == "undefined") {
@@ -277,7 +281,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.filteredGroupsFull;
     },
     emitButtonState: function emitButtonState() {
-      console.log(this.searchName, this.selectedTerm);
       if (this.searchName == "" && this.selectedTerm == null) {
         Nova.$emit('set-button-state', false);
       } else {
@@ -285,7 +288,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       }
     },
     loadMore: function loadMore() {
-      this.visibleCount = Math.min(this.visibleCount + (this.field.paginationCount || 0), this.orderedGroups.length - 1);
+      this.visibleCount = Math.min(this.visibleCount + (this.field.paginationCount || 0), this.orderedGroups.length - this.initialGroupsCount);
     },
     matchesSelectedTerm: function matchesSelectedTerm(group) {
       var term = this.extractGroupTerm(group);
@@ -324,22 +327,20 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.files = {};
       for (var i = 0; i < this.order.length; i++) {
         key = this.order[i];
-        var isShown = [].concat(_toConsumableArray(this.mainGroups), [this.lastGroup]).find(function (group) {
+        var isShown = [].concat(_toConsumableArray(this.mainGroups), _toConsumableArray(this.lastGroups || [])).find(function (group) {
           return (group === null || group === void 0 ? void 0 : group.key) === key;
         });
-        console.log(key, isShown);
         if (!isShown) {
           continue;
         }
         group = this.groups[key].serialize();
-
+        group.attributes["".concat(key, "__order")] = i;
         // Only serialize the group's non-file attributes
         this.value.push({
           layout: group.layout,
           key: group.key,
           attributes: group.attributes
         });
-
         // Attach the files for formData appending
         this.files = _objectSpread(_objectSpread({}, this.files), group.files);
       }
@@ -402,7 +403,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.groups[group.key] = group;
       this.order.push(group.key);
       if (this.paginate() && !populate) {
-        this.visibleCount++;
+        this.initialGroupsCount++;
       }
     },
     /**
@@ -417,13 +418,9 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Move a group down
      */
     moveDown: function moveDown(key) {
-      var shownIndex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var index = this.order.indexOf(key);
       if (index < 0 || index >= this.order.length - 1) return;
       this.order.splice(index + 1, 0, this.order.splice(index, 1)[0]);
-      if (shownIndex + 1 == this.mainGroups.length) {
-        this.visibleCount = Math.min(this.visibleCount + (this.field.paginationCount || 0), this.orderedGroups.length - 1);
-      }
     },
     /**
      * Remove a group
@@ -453,11 +450,15 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           var key = item.id;
           var oldIndex = evt.oldIndex;
           var newIndex = evt.newIndex;
-          if (newIndex < oldIndex) {
-            _this4.moveUp(key);
-          } else if (newIndex > oldIndex) {
-            _this4.moveDown(key);
-          }
+          if (oldIndex === newIndex) return;
+          var movedKey = _this4.order.splice(oldIndex, 1)[0];
+          _this4.order.splice(newIndex, 0, movedKey);
+
+          // if (newIndex < oldIndex) {
+          //   this.moveUp(key);
+          // } else if (newIndex > oldIndex) {
+          //   this.moveDown(key);
+          // }
         }
       });
     }
@@ -498,6 +499,10 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     group: {},
     index: {},
     field: {},
+    draggable: {
+      type: Boolean,
+      "default": true
+    },
     moveUpStatus: {
       type: Boolean,
       "default": true
@@ -1018,10 +1023,6 @@ var _hoisted_5 = {
   key: 0,
   "class": "load-more-container"
 };
-var _hoisted_6 = {
-  key: 1,
-  "class": "last-divider mb-3"
-};
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_Multiselect = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("Multiselect");
   var _component_form_nova_flexible_content_group = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("form-nova-flexible-content-group");
@@ -1067,33 +1068,46 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             return $options.moveUp(group.key);
           },
           onMoveDown: function onMoveDown($event) {
-            return $options.moveDown(group.key, groupIndex);
+            return $options.moveDown(group.key);
           },
           onRemove: function onRemove($event) {
             return $options.remove(group.key);
-          }
-        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove"]);
-      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+          },
+          draggable: !$options.showLoadMoreButton,
+          moveDownStatus: !$options.showLoadMoreButton || groupIndex != $options.mainGroups.length - 1
+        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus"]);
+      }), 128 /* KEYED_FRAGMENT */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
         onClick: _cache[3] || (_cache[3] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
         }),
         "class": "btn btn-default btn-primary"
-      }, " Load More ")])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Divider and last group "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("hr", _hoisted_6)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.lastGroup ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
-        dusk: _ctx.field.attribute + '-last',
-        key: $options.lastGroup.key,
-        field: _ctx.field,
-        group: $options.lastGroup,
-        index: $options.filteredGroupsFull.length - 1,
-        "resource-name": _ctx.resourceName,
-        "resource-id": _ctx.resourceId,
-        errors: _ctx.errors,
-        mode: _ctx.mode,
-        onRemove: _cache[4] || (_cache[4] = function ($event) {
-          return $options.remove($options.lastGroup.key);
-        }),
-        moveUpStatus: false,
-        moveDownStatus: false
-      }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
+      }, " Load More "), _cache[5] || (_cache[5] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("hr", {
+        "class": "last-divider mb-3"
+      }, null, -1 /* HOISTED */))])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Divider and last group "), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.lastGroups, function (group, groupIndex) {
+        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
+          dusk: _ctx.field.attribute + '-' + ($options.filteredGroupsFull.length - $data.initialGroupsCount) + groupIndex,
+          draggable: !$options.showLoadMoreButton,
+          key: group.key,
+          field: _ctx.field,
+          group: group,
+          index: $options.filteredGroupsFull.length - $data.initialGroupsCount + groupIndex,
+          "resource-name": _ctx.resourceName,
+          "resource-id": _ctx.resourceId,
+          errors: _ctx.errors,
+          mode: _ctx.mode,
+          moveUpStatus: !$options.showLoadMoreButton || groupIndex != 0,
+          moveDownStatus: !$options.showLoadMoreButton || $options.lastGroups.length > 1 && groupIndex != $options.lastGroups.length - 1,
+          onMoveUp: function onMoveUp($event) {
+            return $options.moveUp(group.key);
+          },
+          onMoveDown: function onMoveDown($event) {
+            return $options.moveDown(group.key);
+          },
+          onRemove: function onRemove($event) {
+            return $options.remove(group.key);
+          }
+        }, null, 8 /* PROPS */, ["dusk", "draggable", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "moveUpStatus", "moveDownStatus", "onMoveUp", "onMoveDown", "onRemove"]);
+      }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
         layouts: $options.layouts,
         field: _ctx.field,
         "limit-counter": $options.limitCounter,
@@ -1101,7 +1115,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         errors: _ctx.errors,
         "resource-name": _ctx.resourceName,
         "resource-id": _ctx.resourceId,
-        onAddGroup: _cache[5] || (_cache[5] = function ($event) {
+        onAddGroup: _cache[4] || (_cache[4] = function ($event) {
           return $options.addGroup($event);
         })
       }, null, 40 /* PROPS, NEED_HYDRATION */, ["layouts", "field", "limit-counter", "limit-per-layout-counter", "errors", "resource-name", "resource-id"]))];
@@ -1185,7 +1199,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "minus",
     type: "micro",
     "class": "align-top"
-  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, "#" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.index + 1), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, "#" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.index + 1), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+    key: 0,
     dusk: "drag-group",
     type: "button",
     "class": "group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center nova-flexible-content-drag-button",
@@ -1194,8 +1209,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "selector",
     type: "micro",
     "class": "align-top"
-  })], 8 /* PROPS */, _hoisted_8), $props.moveUpStatus ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
-    key: 0,
+  })], 8 /* PROPS */, _hoisted_8)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.moveUpStatus ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+    key: 1,
     dusk: "move-up-group",
     type: "button",
     "class": "group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center",
@@ -1208,7 +1223,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     type: "micro",
     "class": "align-top"
   })], 8 /* PROPS */, _hoisted_9)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $props.moveDownStatus ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
-    key: 1,
+    key: 2,
     dusk: "move-down-group",
     type: "button",
     "class": "group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center",
@@ -1233,7 +1248,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     "class": "align-top",
     type: "micro"
   })], 8 /* PROPS */, _hoisted_11), $data.removeMessage ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_delete_flexible_content_group_modal, {
-    key: 2,
+    key: 3,
     onConfirm: $options.remove,
     onClose: _cache[5] || (_cache[5] = function ($event) {
       return $data.removeMessage = false;

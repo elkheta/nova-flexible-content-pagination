@@ -490,7 +490,7 @@ class Flexible extends Field
     {
         $value = $request[$attribute];
 
-        logger($value);
+      
         if (! $value) {
             return;
         }

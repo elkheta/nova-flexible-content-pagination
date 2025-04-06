@@ -20,23 +20,27 @@
         <form-nova-flexible-content-group v-for="(group, groupIndex) in mainGroups"
           :dusk="field.attribute + '-' + groupIndex" :key="group.key" :field="field" :group="group" :index="groupIndex"
           :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
-          @move-up="moveUp(group.key)" @move-down="moveDown(group.key,groupIndex)" @remove="remove(group.key)" />
-      </div>
+          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" :draggable="!showLoadMoreButton" :moveDownStatus="!showLoadMoreButton || groupIndex != mainGroups.length - 1" />
+    
 
       <!-- Load more button -->
       <div class="load-more-container" v-if="showLoadMoreButton">
         <div @click="loadMore" class="btn btn-default btn-primary">
           Load More
         </div>
+        <hr class="last-divider mb-3" />
       </div>
 
       <!-- Divider and last group -->
-      <hr v-if="showLoadMoreButton" class="last-divider mb-3" />
-        <form-nova-flexible-content-group v-if="lastGroup" :dusk="field.attribute + '-last'" :key="lastGroup.key"
-        :field="field" :group="lastGroup" :index="filteredGroupsFull.length - 1" :resource-name="resourceName"
-        :resource-id="resourceId" :errors="errors" :mode="mode" @remove="remove(lastGroup.key)" :moveUpStatus="false" :moveDownStatus="false" />
- 
-
+     
+      <form-nova-flexible-content-group v-for="(group, groupIndex) in lastGroups"
+         
+          :dusk="field.attribute + '-' + (filteredGroupsFull.length - initialGroupsCount) + groupIndex " :draggable="!showLoadMoreButton" :key="group.key" :field="field" :group="group" :index="(filteredGroupsFull.length - initialGroupsCount) + groupIndex "
+          :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
+          :moveUpStatus="!showLoadMoreButton || groupIndex != 0"   :moveDownStatus="!showLoadMoreButton  || (lastGroups.length > 1 && groupIndex != lastGroups.length - 1)" 
+          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" />
+  
+      </div>
 
       <component :layouts="layouts" :is="field.menu.component" :field="field" :limit-counter="limitCounter"
         :limit-per-layout-counter="limitPerLayoutCounter" :errors="errors" :resource-name="resourceName"
@@ -66,6 +70,7 @@ export default {
       order: [],
       groups: {},
       files: {},
+      initialGroupsCount: 1,
       sortableInstance: null,
       visibleCount: this.field.initialItemsCount !== null
       ? Math.max(this.field.initialItemsCount - 1, 1)
@@ -113,21 +118,24 @@ export default {
     mainGroups() {
       const groups = this.filteredGroupsFull;
   
-      if (!(this.paginate())) {
+      if (!this.paginate()) {
         return groups;
       }
       return groups.slice(0, this.visibleCount);
     },
-    lastGroup() {
+    lastGroups() {
       const groups = this.filteredGroupsFull;
       if (!this.paginate() || groups.length <= this.visibleCount) {
         return null;
       }
-      return groups[groups.length - 1];
+      return groups.slice(-this.initialGroupsCount);
     },
 
     showLoadMoreButton() {
-      return this.paginate() && (this.filteredGroupsFull.length > this.visibleCount + 1);
+      return this.paginate() && (this.filteredGroupsFull.length > this.visibleCount + this.initialGroupsCount);
+    },
+    computedMoveStatus() {
+    return !this.showLoadMoreButton;
     },
     limitCounter() {
       if (
@@ -178,7 +186,7 @@ export default {
       this.filteredGroupsFull;
     },
     emitButtonState() {
-      console.log(this.searchName,this.selectedTerm);
+      
       
       if (this.searchName == "" && this.selectedTerm == null) {
         Nova.$emit('set-button-state', false);
@@ -190,7 +198,7 @@ export default {
     loadMore() {
       this.visibleCount = Math.min(
       this.visibleCount + (this.field.paginationCount || 0),
-      this.orderedGroups.length - 1
+      this.orderedGroups.length - this.initialGroupsCount
     );
     },
     matchesSelectedTerm(group) {
@@ -238,22 +246,22 @@ export default {
       for (var i = 0; i < this.order.length; i++) {
         key = this.order[i];
         
-        var isShown =[...this.mainGroups, this.lastGroup].find(group => group?.key === key);
+        var isShown =[...this.mainGroups, ...(this.lastGroups || [])].find(group => group?.key === key);
+
        
-        console.log(key,isShown);
+    
         if(!isShown){
           continue ;
         }
         group = this.groups[key].serialize();
-
+        group.attributes[`${key}__order`] = i;
         // Only serialize the group's non-file attributes
         this.value.push({
           layout: group.layout,
           key: group.key,
           attributes: group.attributes,
-
+          
         });
-
         // Attach the files for formData appending
         this.files = { ...this.files, ...group.files };
       }
@@ -307,9 +315,9 @@ export default {
      * Set the displayed layouts from the field's current value
      */
     populateGroups() {
-  
       this.order.splice(0, this.order.length);
       this.groups = {};
+
       for (var i = 0; i < this.value.length; i++) {
         this.addGroup(
           this.getLayout(this.value[i].layout),
@@ -352,7 +360,7 @@ export default {
       this.groups[group.key] = group;
       this.order.push(group.key);
       if (this.paginate() && !populate) {
-        this.visibleCount++;
+        this.initialGroupsCount++;
       }
     },
 
@@ -362,28 +370,18 @@ export default {
      */
     moveUp(key) {
       let index = this.order.indexOf(key);
-
       if (index <= 0) return;
-
       this.order.splice(index - 1, 0, this.order.splice(index, 1)[0]);
     },
 
     /**
      * Move a group down
      */
-    moveDown(key,shownIndex = false) {
+    moveDown(key) {
       let index = this.order.indexOf(key);
-
       if (index < 0 || index >= this.order.length - 1) return;
 
       this.order.splice(index + 1, 0, this.order.splice(index, 1)[0]);
-
-      if(shownIndex + 1 == this.mainGroups.length){
-        this.visibleCount = Math.min(
-        this.visibleCount + (this.field.paginationCount || 0),
-        this.orderedGroups.length - 1
-        );
-      }
     },
 
     /**
@@ -419,11 +417,17 @@ export default {
           const oldIndex = evt.oldIndex;
           const newIndex = evt.newIndex;
 
-          if (newIndex < oldIndex) {
-            this.moveUp(key);
-          } else if (newIndex > oldIndex) {
-            this.moveDown(key);
-          }
+          if (oldIndex === newIndex) return;
+ 
+          const movedKey = this.order.splice(oldIndex, 1)[0];
+          this.order.splice(newIndex, 0, movedKey);
+          
+          // if (newIndex < oldIndex) {
+          //   this.moveUp(key);
+          // } else if (newIndex > oldIndex) {
+          //   this.moveDown(key);
+          // }
+       
         },
       });
     },

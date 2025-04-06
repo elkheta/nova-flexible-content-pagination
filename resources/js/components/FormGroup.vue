@@ -42,6 +42,7 @@
 
           <div class="flex" v-if="!readonly">
             <button
+              v-if="draggable"
               dusk="drag-group"
               type="button"
               class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center nova-flexible-content-drag-button"
@@ -130,6 +131,10 @@ export default {
     group: {},
     index: {},
     field: {},
+    draggable: {
+      type: Boolean,
+      default: true,
+    },
     moveUpStatus: {
       type: Boolean,
       default: true,
@@ -138,6 +143,7 @@ export default {
       type: Boolean,
       default: true,
     },
+
     ...mapProps(["resourceName", "resourceId", "mode"]),
   },
 
