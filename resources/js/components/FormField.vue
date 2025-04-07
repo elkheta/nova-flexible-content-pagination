@@ -361,6 +361,9 @@ export default {
       this.order.push(group.key);
       if (this.paginate() && !populate) {
         this.initialGroupsCount++;
+        if(!this.showLoadMoreButton){
+          this.visibleCount++;
+        }
       }
     },
 
