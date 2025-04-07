@@ -147,6 +147,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _group__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../group */ "./resources/js/group.js");
 /* harmony import */ var _vueform_multiselect__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @vueform/multiselect */ "./node_modules/@vueform/multiselect/dist/multiselect.mjs");
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -429,13 +433,31 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Remove a group
      */
     remove: function remove(key) {
+      var _this4 = this;
       var index = this.order.indexOf(key);
       if (index < 0) return;
-      this.order.splice(index, 1);
-      delete this.groups[key];
+      if (this.paginate() && key.includes('-')) {
+        var _key$split = key.split('-'),
+          _key$split2 = _slicedToArray(_key$split, 2),
+          id = _key$split2[0],
+          layout = _key$split2[1];
+        Nova.request().post('delete-layout', {
+          id: id,
+          layout: layout
+        }).then(function () {
+          _this4.order.splice(index, 1);
+          delete _this4.groups[key];
+        })["catch"](function (error) {
+          console.error('Failed to delete group from server:', error);
+        });
+      } else {
+        // No request needed, just delete locally
+        this.order.splice(index, 1);
+        delete this.groups[key];
+      }
     },
     initSortable: function initSortable() {
-      var _this4 = this;
+      var _this5 = this;
       var containerRef = this.$refs["flexibleFieldContainer"];
       if (!containerRef || this.sortableInstance) {
         return;
@@ -454,8 +476,8 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           var oldIndex = evt.oldIndex;
           var newIndex = evt.newIndex;
           if (oldIndex === newIndex) return;
-          var movedKey = _this4.order.splice(oldIndex, 1)[0];
-          _this4.order.splice(newIndex, 0, movedKey);
+          var movedKey = _this5.order.splice(oldIndex, 1)[0];
+          _this5.order.splice(newIndex, 0, movedKey);
 
           // if (newIndex < oldIndex) {
           //   this.moveUp(key);

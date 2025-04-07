@@ -390,15 +390,30 @@ export default {
     /**
      * Remove a group
      */
-    remove(key) {
+     remove(key) {
       let index = this.order.indexOf(key);
-
       if (index < 0) return;
+      if (this.paginate() && key.includes('-')) {
+        const [id, layout] = key.split('-');
 
-      this.order.splice(index, 1);
-      delete this.groups[key];
+        Nova.request()
+          .post('delete-layout', {
+            id,
+            layout,
+          })
+          .then(() => {
+            this.order.splice(index, 1);
+            delete this.groups[key];
+          })
+          .catch((error) => {
+            console.error('Failed to delete group from server:', error);
+          });
+      } else {
+        // No request needed, just delete locally
+        this.order.splice(index, 1);
+        delete this.groups[key];
+      }
     },
-
     initSortable() {
       const containerRef = this.$refs["flexibleFieldContainer"];
 
