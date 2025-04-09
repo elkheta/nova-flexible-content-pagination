@@ -447,8 +447,9 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         }).then(function () {
           _this4.order.splice(index, 1);
           delete _this4.groups[key];
-        })["catch"](function (error) {
-          console.error('Failed to delete group from server:', error);
+        })["catch"](function (result) {
+          var _result$response;
+          Nova.error(((_result$response = result.response) === null || _result$response === void 0 || (_result$response = _result$response.data) === null || _result$response === void 0 ? void 0 : _result$response.message) || 'Failed to delete group from server');
         });
       } else {
         // No request needed, just delete locally

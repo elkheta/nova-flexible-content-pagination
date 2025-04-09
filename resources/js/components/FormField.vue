@@ -405,8 +405,8 @@ export default {
             this.order.splice(index, 1);
             delete this.groups[key];
           })
-          .catch((error) => {
-            console.error('Failed to delete group from server:', error);
+          .catch((result) => {
+            Nova.error(result.response?.data?.message || 'Failed to delete group from server');
           });
       } else {
         // No request needed, just delete locally
