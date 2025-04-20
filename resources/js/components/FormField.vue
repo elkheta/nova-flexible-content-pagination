@@ -5,18 +5,18 @@
 
       <div class="flex flex-row gap-4">
         <div class="w-1/2" v-if="searchable">
-          <input v-model="searchName" @keyup="onSearchKeyUp" placeholder="Search by course/lesson name or label"
+          <input v-model="tempSearchName" @input="onInputChange" placeholder="Search by course/lesson name or label"
             type="text" class="w-full form-control form-input form-control-bordered search-style" />
         </div>
         <div class="w-1/2" v-if="hasActiveTermFilter">
-          <Multiselect v-model="selectedTerm" :options="availableTerms" placeholder="Filter by Active Term"
+          <Multiselect v-model="tempSelectedTerm" @change="onTermChange" :options="availableTerms" placeholder="Filter by Active Term"
             track-by="value" :searchable="true" />
         </div>
       </div>
 
-      <!-- Main groups -->
-      <div ref="flexibleFieldContainer">
-        <!-- Global spinner overlay for search/filter operations -->
+      <!-- Main groups with properly positioned overlay -->
+      <div ref="flexibleFieldContainer" class="flexible-field-content">
+        <!-- Global spinner overlay for search/filter operations - only covers content area -->
         <div v-if="isFiltering" class="filter-loading-overlay">
           <div class="filter-spinner-container">
             <svg class="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -125,6 +125,7 @@ export default {
       : null,
 
       selectedTerm: null,
+      tempSelectedTerm: null, // Temporary holder before updating the reactive property
       availableTerms: [
         { value: "ALL", label: "All" },
         { value: "FIRST_TERM", label: "First Term" },
@@ -132,10 +133,11 @@ export default {
       ],
       searchable: this.field.searchable || null,
       searchName: '',
+      tempSearchName: '', // Temporary holder before updating the reactive property
       isLoading: false,
       renderedItems: {}, // Track which items have been rendered
       previousVisibleCount: null, // Store previous visibleCount before filtering
-      isFiltering: false, // New variable to track filtering state
+      isFiltering: false, // Track if filtering/searching is in progress
     };
   },
 
@@ -242,31 +244,33 @@ export default {
     }
   },
   watch: {
-    searchName(newVal) {
-      // Always show spinner when search changes
+    searchName() {
+      // Always show spinner when search changes - immediately
       this.isFiltering = true;
       
-      this.$nextTick(() => {
+      // Release thread to ensure spinner appears before heavy work
+      setTimeout(() => {
         this.emitButtonState();
         
-        // Auto-hide spinner after a short delay
+        // Keep spinner visible for longer on large datasets
         setTimeout(() => {
           this.isFiltering = false;
-        }, 600);
-      });
+        }, 800);
+      }, 0);
     },
-    selectedTerm(newVal) {
-      // Always show spinner when term selection changes
+    selectedTerm() {
+      // Always show spinner when term selection changes - immediately
       this.isFiltering = true;
       
-      this.$nextTick(() => {
+      // Release thread to ensure spinner appears before heavy work
+      setTimeout(() => {
         this.emitButtonState();
         
-        // Auto-hide spinner after a short delay
+        // Keep spinner visible for longer on large datasets
         setTimeout(() => {
           this.isFiltering = false;
-        }, 600);
-      });
+        }, 800);
+      }, 0);
     },
     
   },
@@ -290,7 +294,7 @@ export default {
       }
     },
     onSearchKeyUp() {
-      this._computeFilteredGroups();
+      // This is handled by onInputChange now
     },
     _computeFilteredGroups() {
       this.$forceUpdate();
@@ -563,19 +567,52 @@ export default {
         },
       });
     },
+    onInputChange(event) {
+      // Always show spinner immediately
+      this.isFiltering = true;
+      
+      // Use a short timeout to ensure spinner is displayed first
+      setTimeout(() => {
+        // Then update the actual searchName which triggers computation
+        this.searchName = this.tempSearchName;
+        
+        // Force a longer spinner display time
+        setTimeout(() => {
+          this.isFiltering = false;
+        }, 1000);
+      }, 50);
+    },
+    onTermChange(value) {
+      // Always show spinner immediately
+      this.isFiltering = true;
+      
+      // Use a short timeout to ensure spinner is displayed first
+      setTimeout(() => {
+        // Then update the actual selectedTerm which triggers computation
+        this.selectedTerm = this.tempSelectedTerm;
+        
+        // Force a longer spinner display time
+        setTimeout(() => {
+          this.isFiltering = false;
+        }, 1000);
+      }, 50);
+    },
   }
 };
 </script>
+
 <style lang="scss">
 @import "@vueform/multiselect/themes/default.scss";
 
 .load-more-container {
   display: flex;
   justify-content: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  flex-direction: column;
   align-items: center;
   cursor: pointer;
   padding: 8px;
-  
 }
 
 .search-style {
@@ -596,6 +633,11 @@ export default {
   min-height: calc(2* var(--ms-border-width, 1px) + var(--ms-font-size, 1rem)* var(--ms-line-height, 1.375) + 2* var(--ms-py, 0.5rem));
 }
 
+.flexible-field-content {
+  position: relative; /* Required for absolute positioning of overlay */
+  margin-top: 10px;
+}
+
 .filter-loading-overlay {
   position: absolute;
   top: 0;
@@ -613,6 +655,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--primary);
 }
 
 .animate-spin {
