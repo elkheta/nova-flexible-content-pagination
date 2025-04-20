@@ -16,6 +16,16 @@
 
       <!-- Main groups -->
       <div ref="flexibleFieldContainer">
+        <!-- Global spinner overlay for search/filter operations -->
+        <div v-if="isFiltering" class="filter-loading-overlay">
+          <div class="filter-spinner-container">
+            <svg class="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        </div>
+
         <form-nova-flexible-content-group 
           v-for="(group, groupIndex) in visibleGroups"
           :key="group.key" 
@@ -125,7 +135,7 @@ export default {
       isLoading: false,
       renderedItems: {}, // Track which items have been rendered
       previousVisibleCount: null, // Store previous visibleCount before filtering
-    
+      isFiltering: false, // New variable to track filtering state
     };
   },
 
@@ -232,14 +242,30 @@ export default {
     }
   },
   watch: {
-    searchName() {
+    searchName(newVal) {
+      // Always show spinner when search changes
+      this.isFiltering = true;
+      
       this.$nextTick(() => {
         this.emitButtonState();
+        
+        // Auto-hide spinner after a short delay
+        setTimeout(() => {
+          this.isFiltering = false;
+        }, 600);
       });
     },
-    selectedTerm() {
+    selectedTerm(newVal) {
+      // Always show spinner when term selection changes
+      this.isFiltering = true;
+      
       this.$nextTick(() => {
         this.emitButtonState();
+        
+        // Auto-hide spinner after a short delay
+        setTimeout(() => {
+          this.isFiltering = false;
+        }, 600);
       });
     },
     
@@ -549,11 +575,7 @@ export default {
   align-items: center;
   cursor: pointer;
   padding: 8px;
-  transition: transform 0.2s ease-in-out;
-
-  &:hover {
-    transform: scale(1.1);
-  }
+  
 }
 
 .search-style {
@@ -572,5 +594,38 @@ export default {
   background: var(--ms-bg, #FFFFFF);
   font-size: var(--ms-font-size, 1rem);
   min-height: calc(2* var(--ms-border-width, 1px) + var(--ms-font-size, 1rem)* var(--ms-line-height, 1.375) + 2* var(--ms-py, 0.5rem));
+}
+
+.filter-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.filter-spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+  color: #4299e1; /* Tailwind blue-500 */
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
