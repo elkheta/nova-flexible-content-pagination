@@ -42,7 +42,6 @@
           @remove="remove(group.key)" 
           :draggable="!showLoadMoreButton" 
           :moveDownStatus="!(showLoadMoreButton && groupIndex === visibleGroups.length - 1) && (groupIndex !== filteredGroupsFull.length - 1)"
-          @mounted="trackRendered(group.key)" 
         />
 
         <!-- Load more button -->
@@ -89,29 +88,16 @@ import { DependentFormField, HandlesValidationErrors, mapProps, } from "laravel-
 import Group from "../group";
 import Multiselect from "@vueform/multiselect";
 
-// Global component rendering cache
-const renderedFlexibleComponents = {};
-
 export default {
   mixins: [HandlesValidationErrors, DependentFormField],
+
+  inheritAttrs: false,
 
   props: {
     ...mapProps(["resourceName", "resourceId", "mode"]),
   },
 
   components: { FullWidthField, Multiselect },
-
-  provide() {
-    // Provide the global cache to all nested components
-    return {
-      globalRenderedComponents: renderedFlexibleComponents
-    };
-  },
-
-  // Inject the global cache if available (for nested components)
-  inject: {
-    globalRenderedComponents: { default: () => renderedFlexibleComponents }
-  },
 
   data() {
     return {
@@ -135,7 +121,6 @@ export default {
       searchName: '',
       tempSearchName: '', // Temporary holder before updating the reactive property
       isLoading: false,
-      renderedItems: {}, // Track which items have been rendered
       previousVisibleCount: null, // Store previous visibleCount before filtering
       isFiltering: false, // Track if filtering/searching is in progress
     };
@@ -278,20 +263,6 @@ export default {
   methods: {
     paginate() {
       return this.field.paginate;
-    },
-    trackRendered(key) {
-      // Update the global cache rather than just the local one
-      const globalKey = `${this.field.attribute || ''}-${key}`;
-      
-      // Only log the first time each component is rendered
-      if (!this.globalRenderedComponents[globalKey]) {
-        this.globalRenderedComponents[globalKey] = true;
-        this.renderedItems[key] = true;
-        console.log(`Group ${key} was rendered for the first time (${globalKey})`);
-        console.log(`Total unique groups rendered: ${Object.keys(this.renderedItems).length}`);
-      } else {
-        console.log(`Group ${key} already rendered before - reusing component (${globalKey})`);
-      }
     },
     onSearchKeyUp() {
       // This is handled by onInputChange now

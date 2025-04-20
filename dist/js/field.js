@@ -167,29 +167,13 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
 
 
 
-
-// Global component rendering cache
-var renderedFlexibleComponents = {};
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   mixins: [laravel_nova__WEBPACK_IMPORTED_MODULE_2__.HandlesValidationErrors, laravel_nova__WEBPACK_IMPORTED_MODULE_2__.DependentFormField],
+  inheritAttrs: false,
   props: _objectSpread({}, (0,laravel_nova__WEBPACK_IMPORTED_MODULE_2__.mapProps)(["resourceName", "resourceId", "mode"])),
   components: {
     FullWidthField: _FullWidthField__WEBPACK_IMPORTED_MODULE_0__["default"],
     Multiselect: _vueform_multiselect__WEBPACK_IMPORTED_MODULE_4__["default"]
-  },
-  provide: function provide() {
-    // Provide the global cache to all nested components
-    return {
-      globalRenderedComponents: renderedFlexibleComponents
-    };
-  },
-  // Inject the global cache if available (for nested components)
-  inject: {
-    globalRenderedComponents: {
-      "default": function _default() {
-        return renderedFlexibleComponents;
-      }
-    }
   },
   data: function data() {
     return {
@@ -217,8 +201,6 @@ var renderedFlexibleComponents = {};
       tempSearchName: '',
       // Temporary holder before updating the reactive property
       isLoading: false,
-      renderedItems: {},
-      // Track which items have been rendered
       previousVisibleCount: null,
       // Store previous visibleCount before filtering
       isFiltering: false // Track if filtering/searching is in progress
@@ -350,20 +332,6 @@ var renderedFlexibleComponents = {};
   methods: {
     paginate: function paginate() {
       return this.field.paginate;
-    },
-    trackRendered: function trackRendered(key) {
-      // Update the global cache rather than just the local one
-      var globalKey = "".concat(this.field.attribute || '', "-").concat(key);
-
-      // Only log the first time each component is rendered
-      if (!this.globalRenderedComponents[globalKey]) {
-        this.globalRenderedComponents[globalKey] = true;
-        this.renderedItems[key] = true;
-        console.log("Group ".concat(key, " was rendered for the first time (").concat(globalKey, ")"));
-        console.log("Total unique groups rendered: ".concat(Object.keys(this.renderedItems).length));
-      } else {
-        console.log("Group ".concat(key, " already rendered before - reusing component (").concat(globalKey, ")"));
-      }
     },
     onSearchKeyUp: function onSearchKeyUp() {
       // This is handled by onInputChange now
@@ -666,14 +634,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       "default": true
     }
   }, (0,laravel_nova__WEBPACK_IMPORTED_MODULE_0__.mapProps)(["resourceName", "resourceId", "mode"])),
-  emits: ["move-up", "move-down", "remove", "mounted"],
-  inject: {
-    globalRenderedComponents: {
-      "default": function _default() {
-        return {};
-      }
-    }
-  },
+  emits: ["move-up", "move-down", "remove"],
   data: function data() {
     return {
       removeMessage: false,
@@ -699,19 +660,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         classes.push("hidden");
       }
       return classes;
-    }
-  },
-  mounted: function mounted() {
-    // Emit a mounted event when the component is first mounted
-    this.$emit('mounted');
-
-    // Track this component in the global cache
-    if (this.group && this.group.key) {
-      var globalKey = "".concat(this.field.attribute || '', "-").concat(this.group.key);
-      if (!this.globalRenderedComponents[globalKey]) {
-        this.globalRenderedComponents[globalKey] = true;
-        console.log("FormGroup component ".concat(this.group.key, " registered globally (").concat(globalKey, ")"));
-      }
     }
   },
   methods: {
@@ -1281,11 +1229,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             return $options.remove(group.key);
           },
           draggable: !$options.showLoadMoreButton,
-          moveDownStatus: !($options.showLoadMoreButton && groupIndex === $options.visibleGroups.length - 1) && groupIndex !== $options.filteredGroupsFull.length - 1,
-          onMounted: function onMounted($event) {
-            return $options.trackRendered(group.key);
-          }
-        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus", "onMounted"]);
+          moveDownStatus: !($options.showLoadMoreButton && groupIndex === $options.visibleGroups.length - 1) && groupIndex !== $options.filteredGroupsFull.length - 1
+        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus"]);
       }), 128 /* KEYED_FRAGMENT */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_6, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
         onClick: _cache[3] || (_cache[3] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
