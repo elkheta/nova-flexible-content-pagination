@@ -150,6 +150,10 @@ export default {
 
   emits: ["move-up", "move-down", "remove", "mounted"],
 
+  inject: {
+    globalRenderedComponents: { default: () => ({}) }
+  },
+
   data() {
     return {
       removeMessage: false,
@@ -202,6 +206,15 @@ export default {
   mounted() {
     // Emit a mounted event when the component is first mounted
     this.$emit('mounted');
+    
+    // Track this component in the global cache
+    if (this.group && this.group.key) {
+      const globalKey = `${this.field.attribute || ''}-${this.group.key}`;
+      if (!this.globalRenderedComponents[globalKey]) {
+        this.globalRenderedComponents[globalKey] = true;
+        console.log(`FormGroup component ${this.group.key} registered globally (${globalKey})`);
+      }
+    }
   },
 
   methods: {

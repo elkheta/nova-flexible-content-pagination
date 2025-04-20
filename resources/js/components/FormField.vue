@@ -79,6 +79,9 @@ import { DependentFormField, HandlesValidationErrors, mapProps, } from "laravel-
 import Group from "../group";
 import Multiselect from "@vueform/multiselect";
 
+// Global component rendering cache
+const renderedFlexibleComponents = {};
+
 export default {
   mixins: [HandlesValidationErrors, DependentFormField],
 
@@ -87,6 +90,18 @@ export default {
   },
 
   components: { FullWidthField, Multiselect },
+
+  provide() {
+    // Provide the global cache to all nested components
+    return {
+      globalRenderedComponents: renderedFlexibleComponents
+    };
+  },
+
+  // Inject the global cache if available (for nested components)
+  inject: {
+    globalRenderedComponents: { default: () => renderedFlexibleComponents }
+  },
 
   data() {
     return {
@@ -235,13 +250,17 @@ export default {
       return this.field.paginate;
     },
     trackRendered(key) {
+      // Update the global cache rather than just the local one
+      const globalKey = `${this.field.attribute || ''}-${key}`;
+      
       // Only log the first time each component is rendered
-      if (!this.renderedItems[key]) {
+      if (!this.globalRenderedComponents[globalKey]) {
+        this.globalRenderedComponents[globalKey] = true;
         this.renderedItems[key] = true;
-        console.log(`Group ${key} was rendered for the first time`);
+        console.log(`Group ${key} was rendered for the first time (${globalKey})`);
         console.log(`Total unique groups rendered: ${Object.keys(this.renderedItems).length}`);
       } else {
-        console.log(`Group ${key} already rendered before - reusing component`);
+        console.log(`Group ${key} already rendered before - reusing component (${globalKey})`);
       }
     },
     onSearchKeyUp() {

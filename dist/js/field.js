@@ -167,12 +167,29 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
 
 
 
+
+// Global component rendering cache
+var renderedFlexibleComponents = {};
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   mixins: [laravel_nova__WEBPACK_IMPORTED_MODULE_2__.HandlesValidationErrors, laravel_nova__WEBPACK_IMPORTED_MODULE_2__.DependentFormField],
   props: _objectSpread({}, (0,laravel_nova__WEBPACK_IMPORTED_MODULE_2__.mapProps)(["resourceName", "resourceId", "mode"])),
   components: {
     FullWidthField: _FullWidthField__WEBPACK_IMPORTED_MODULE_0__["default"],
     Multiselect: _vueform_multiselect__WEBPACK_IMPORTED_MODULE_4__["default"]
+  },
+  provide: function provide() {
+    // Provide the global cache to all nested components
+    return {
+      globalRenderedComponents: renderedFlexibleComponents
+    };
+  },
+  // Inject the global cache if available (for nested components)
+  inject: {
+    globalRenderedComponents: {
+      "default": function _default() {
+        return renderedFlexibleComponents;
+      }
+    }
   },
   data: function data() {
     return {
@@ -311,13 +328,17 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return this.field.paginate;
     },
     trackRendered: function trackRendered(key) {
+      // Update the global cache rather than just the local one
+      var globalKey = "".concat(this.field.attribute || '', "-").concat(key);
+
       // Only log the first time each component is rendered
-      if (!this.renderedItems[key]) {
+      if (!this.globalRenderedComponents[globalKey]) {
+        this.globalRenderedComponents[globalKey] = true;
         this.renderedItems[key] = true;
-        console.log("Group ".concat(key, " was rendered for the first time"));
+        console.log("Group ".concat(key, " was rendered for the first time (").concat(globalKey, ")"));
         console.log("Total unique groups rendered: ".concat(Object.keys(this.renderedItems).length));
       } else {
-        console.log("Group ".concat(key, " already rendered before - reusing component"));
+        console.log("Group ".concat(key, " already rendered before - reusing component (").concat(globalKey, ")"));
       }
     },
     onSearchKeyUp: function onSearchKeyUp() {
@@ -590,6 +611,13 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     }
   }, (0,laravel_nova__WEBPACK_IMPORTED_MODULE_0__.mapProps)(["resourceName", "resourceId", "mode"])),
   emits: ["move-up", "move-down", "remove", "mounted"],
+  inject: {
+    globalRenderedComponents: {
+      "default": function _default() {
+        return {};
+      }
+    }
+  },
   data: function data() {
     return {
       removeMessage: false,
@@ -620,6 +648,15 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
   mounted: function mounted() {
     // Emit a mounted event when the component is first mounted
     this.$emit('mounted');
+
+    // Track this component in the global cache
+    if (this.group && this.group.key) {
+      var globalKey = "".concat(this.field.attribute || '', "-").concat(this.group.key);
+      if (!this.globalRenderedComponents[globalKey]) {
+        this.globalRenderedComponents[globalKey] = true;
+        console.log("FormGroup component ".concat(this.group.key, " registered globally (").concat(globalKey, ")"));
+      }
+    }
   },
   methods: {
     /**
