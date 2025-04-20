@@ -14,32 +14,55 @@
         </div>
       </div>
 
-
       <!-- Main groups -->
       <div ref="flexibleFieldContainer">
-        <form-nova-flexible-content-group v-for="(group, groupIndex) in mainGroups"
-          :dusk="field.attribute + '-' + groupIndex" :key="group.key" :field="field" :group="group" :index="groupIndex"
-          :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
-          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" :draggable="!showLoadMoreButton" :moveDownStatus="!showLoadMoreButton || groupIndex != mainGroups.length - 1" />
-    
+        <form-nova-flexible-content-group 
+          v-for="(group, groupIndex) in visibleGroups"
+          :key="group.key" 
+          :dusk="field.attribute + '-' + groupIndex" 
+          :field="field" 
+          :group="group" 
+          :index="groupIndex"
+          :resource-name="resourceName" 
+          :resource-id="resourceId" 
+          :errors="errors" 
+          :mode="mode"
+          @move-up="moveUp(group.key)" 
+          @move-down="moveDown(group.key)" 
+          @remove="remove(group.key)" 
+          :draggable="!showLoadMoreButton" 
+          :moveDownStatus="!(showLoadMoreButton && groupIndex === visibleGroups.length - 1) && (groupIndex !== filteredGroupsFull.length - 1)"
+          @mounted="trackRendered(group.key)" 
+        />
 
-      <!-- Load more button -->
-      <div class="load-more-container" v-if="showLoadMoreButton">
-        <div @click="loadMore" class="btn btn-default btn-primary">
-          Load More
+        <!-- Load more button -->
+        <div class="load-more-container" v-if="showLoadMoreButton">
+          <button @click="loadMore" class="btn btn-default btn-primary" :class="{'opacity-75 cursor-not-allowed': isLoading}" :disabled="isLoading">
+            <span v-if="isLoading" class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+            {{ isLoading ? 'Loading...' : 'Load More' }}
+          </button>
+          <hr class="last-divider mb-3" />
         </div>
-        <hr class="last-divider mb-3" />
-      </div>
 
-      <!-- Divider and last group -->
-     
-      <form-nova-flexible-content-group v-for="(group, groupIndex) in lastGroups"
-         
-          :dusk="field.attribute + '-' + (filteredGroupsFull.length - initialGroupsCount) + groupIndex " :draggable="!showLoadMoreButton" :key="group.key" :field="field" :group="group" :index="(filteredGroupsFull.length - initialGroupsCount) + groupIndex "
-          :resource-name="resourceName" :resource-id="resourceId" :errors="errors" :mode="mode"
-          :moveUpStatus="!showLoadMoreButton || groupIndex != 0"   :moveDownStatus="!showLoadMoreButton  || (lastGroups.length > 1 && groupIndex != lastGroups.length - 1)" 
-          @move-up="moveUp(group.key)" @move-down="moveDown(group.key)" @remove="remove(group.key)" />
-  
+        <!-- Last groups -->
+        <form-nova-flexible-content-group 
+          v-for="(group, groupIndex) in lastGroups"
+          :key="'last-' + group.key" 
+          :dusk="field.attribute + '-' + (filteredGroupsFull.length - initialGroupsCount) + groupIndex" 
+          :draggable="!showLoadMoreButton" 
+          :field="field" 
+          :group="group" 
+          :index="(filteredGroupsFull.length - initialGroupsCount) + groupIndex"
+          :resource-name="resourceName" 
+          :resource-id="resourceId" 
+          :errors="errors" 
+          :mode="mode"
+          :moveUpStatus="!showLoadMoreButton || groupIndex !== 0"   
+          :moveDownStatus="!showLoadMoreButton || (lastGroups.length > 1 && groupIndex !== lastGroups.length - 1)" 
+          @move-up="moveUp(group.key)" 
+          @move-down="moveDown(group.key)" 
+          @remove="remove(group.key)" 
+        />
       </div>
 
       <component :layouts="layouts" :is="field.menu.component" :field="field" :limit-counter="limitCounter"
@@ -84,6 +107,9 @@ export default {
       ],
       searchable: this.field.searchable || null,
       searchName: '',
+      isLoading: false,
+      renderedItems: {}, // Track which items have been rendered
+      previousVisibleCount: null, // Store previous visibleCount before filtering
     
     };
   },
@@ -115,13 +141,35 @@ export default {
         return match ? termMatch || nameMatch : true;
       });
     },
-    mainGroups() {
-      const groups = this.filteredGroupsFull;
-  
-      if (!this.paginate()) {
-        return groups;
+    visibleGroups() {
+      // Use the main end index calculation regardless of filtering
+      const mainEndIndex = this.lastGroups ? 
+        this.filteredGroupsFull.length - this.initialGroupsCount : 
+        this.filteredGroupsFull.length;
+      
+      // When filtering
+      if (this.searchName || this.selectedTerm) {
+        // Store current visibleCount if not already stored
+        if (this.previousVisibleCount === null) {
+          this.previousVisibleCount = this.visibleCount;
+          // Reset to initial count during search
+          this.visibleCount = this.field.initialItemsCount !== null
+            ? Math.max(this.field.initialItemsCount - 1, 1)
+            : this.filteredGroupsFull.length;
+        }
+        
+        // Still show only up to visibleCount items even when filtering
+        return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
+      } else {
+        // Restore previous count if we're clearing a filter
+        if (this.previousVisibleCount !== null) {
+          this.visibleCount = this.previousVisibleCount;
+          this.previousVisibleCount = null;
+        }
+        
+        // Show only up to visibleCount when not filtering
+        return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
       }
-      return groups.slice(0, this.visibleCount);
     },
     lastGroups() {
       const groups = this.filteredGroupsFull;
@@ -170,10 +218,14 @@ export default {
   },
   watch: {
     searchName() {
-      this.emitButtonState();
+      this.$nextTick(() => {
+        this.emitButtonState();
+      });
     },
     selectedTerm() {
-      this.emitButtonState();
+      this.$nextTick(() => {
+        this.emitButtonState();
+      });
     },
     
   },
@@ -182,24 +234,42 @@ export default {
     paginate() {
       return this.field.paginate;
     },
+    trackRendered(key) {
+      // Only log the first time each component is rendered
+      if (!this.renderedItems[key]) {
+        this.renderedItems[key] = true;
+        console.log(`Group ${key} was rendered for the first time`);
+        console.log(`Total unique groups rendered: ${Object.keys(this.renderedItems).length}`);
+      } else {
+        console.log(`Group ${key} already rendered before - reusing component`);
+      }
+    },
     onSearchKeyUp() {
-      this.filteredGroupsFull;
+      this._computeFilteredGroups();
+    },
+    _computeFilteredGroups() {
+      this.$forceUpdate();
     },
     emitButtonState() {
-      
-      
       if (this.searchName == "" && this.selectedTerm == null) {
+        console.log(false);
         Nova.$emit('set-button-state', false);
       } else {
+        console.log(true);
         Nova.$emit('set-button-state', true);
       }
-     
     },
     loadMore() {
-      this.visibleCount = Math.min(
-      this.visibleCount + (this.field.paginationCount || 0),
-      this.orderedGroups.length - this.initialGroupsCount
-    );
+      this.isLoading = true;
+      
+      // Using setTimeout to simulate async loading behavior
+      setTimeout(() => {
+        this.visibleCount = Math.min(
+          this.visibleCount + (this.field.paginationCount || 0),
+          this.orderedGroups.length - this.initialGroupsCount
+        );
+        this.isLoading = false;
+      }, 500); // Small delay to show loading state
     },
     matchesSelectedTerm(group) {
       const term = this.extractGroupTerm(group);
@@ -246,8 +316,7 @@ export default {
       for (var i = 0; i < this.order.length; i++) {
         key = this.order[i];
         
-        var isShown =[...this.mainGroups, ...(this.lastGroups || [])].find(group => group?.key === key);
-
+        const isShown = [...this.visibleGroups, ...(this.lastGroups || [])].some(group => group.key === key);
        
     
         if(!isShown){

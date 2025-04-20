@@ -105,8 +105,9 @@
       <div :class="containerStyle">
         <component
           v-for="(item, index) in group.fields"
-          :key="index"
+          :key="item.key || index"
           :is="'form-' + item.component"
+          v-once
           :resource-name="resourceName"
           :resource-id="resourceId"
           :field="item"
@@ -147,12 +148,12 @@ export default {
     ...mapProps(["resourceName", "resourceId", "mode"]),
   },
 
-  emits: ["move-up", "move-down", "remove"],
+  emits: ["move-up", "move-down", "remove", "mounted"],
 
   data() {
     return {
       removeMessage: false,
-      collapsed: this.group.collapsed,
+      collapsed: this.group.collapsed || false,
       readonly: this.group.readonly,
     };
   },
@@ -196,6 +197,11 @@ export default {
 
       return classes;
     },
+  },
+
+  mounted() {
+    // Emit a mounted event when the component is first mounted
+    this.$emit('mounted');
   },
 
   methods: {
@@ -244,6 +250,7 @@ export default {
     collapse() {
       this.collapsed = true;
     },
+
   },
 };
 </script>

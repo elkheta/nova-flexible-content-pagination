@@ -194,7 +194,11 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         label: "Second Term"
       }],
       searchable: this.field.searchable || null,
-      searchName: ''
+      searchName: '',
+      isLoading: false,
+      renderedItems: {},
+      // Track which items have been rendered
+      previousVisibleCount: null // Store previous visibleCount before filtering
     };
   },
   computed: {
@@ -225,12 +229,31 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         return match ? termMatch || nameMatch : true;
       });
     },
-    mainGroups: function mainGroups() {
-      var groups = this.filteredGroupsFull;
-      if (!this.paginate()) {
-        return groups;
+    visibleGroups: function visibleGroups() {
+      // Use the main end index calculation regardless of filtering
+      var mainEndIndex = this.lastGroups ? this.filteredGroupsFull.length - this.initialGroupsCount : this.filteredGroupsFull.length;
+
+      // When filtering
+      if (this.searchName || this.selectedTerm) {
+        // Store current visibleCount if not already stored
+        if (this.previousVisibleCount === null) {
+          this.previousVisibleCount = this.visibleCount;
+          // Reset to initial count during search
+          this.visibleCount = this.field.initialItemsCount !== null ? Math.max(this.field.initialItemsCount - 1, 1) : this.filteredGroupsFull.length;
+        }
+
+        // Still show only up to visibleCount items even when filtering
+        return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
+      } else {
+        // Restore previous count if we're clearing a filter
+        if (this.previousVisibleCount !== null) {
+          this.visibleCount = this.previousVisibleCount;
+          this.previousVisibleCount = null;
+        }
+
+        // Show only up to visibleCount when not filtering
+        return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
       }
-      return groups.slice(0, this.visibleCount);
     },
     lastGroups: function lastGroups() {
       var groups = this.filteredGroupsFull;
@@ -271,28 +294,56 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
   },
   watch: {
     searchName: function searchName() {
-      this.emitButtonState();
+      var _this4 = this;
+      this.$nextTick(function () {
+        _this4.emitButtonState();
+      });
     },
     selectedTerm: function selectedTerm() {
-      this.emitButtonState();
+      var _this5 = this;
+      this.$nextTick(function () {
+        _this5.emitButtonState();
+      });
     }
   },
   methods: {
     paginate: function paginate() {
       return this.field.paginate;
     },
+    trackRendered: function trackRendered(key) {
+      // Only log the first time each component is rendered
+      if (!this.renderedItems[key]) {
+        this.renderedItems[key] = true;
+        console.log("Group ".concat(key, " was rendered for the first time"));
+        console.log("Total unique groups rendered: ".concat(Object.keys(this.renderedItems).length));
+      } else {
+        console.log("Group ".concat(key, " already rendered before - reusing component"));
+      }
+    },
     onSearchKeyUp: function onSearchKeyUp() {
-      this.filteredGroupsFull;
+      this._computeFilteredGroups();
+    },
+    _computeFilteredGroups: function _computeFilteredGroups() {
+      this.$forceUpdate();
     },
     emitButtonState: function emitButtonState() {
       if (this.searchName == "" && this.selectedTerm == null) {
+        console.log(false);
         Nova.$emit('set-button-state', false);
       } else {
+        console.log(true);
         Nova.$emit('set-button-state', true);
       }
     },
     loadMore: function loadMore() {
-      this.visibleCount = Math.min(this.visibleCount + (this.field.paginationCount || 0), this.orderedGroups.length - this.initialGroupsCount);
+      var _this6 = this;
+      this.isLoading = true;
+
+      // Using setTimeout to simulate async loading behavior
+      setTimeout(function () {
+        _this6.visibleCount = Math.min(_this6.visibleCount + (_this6.field.paginationCount || 0), _this6.orderedGroups.length - _this6.initialGroupsCount);
+        _this6.isLoading = false;
+      }, 500); // Small delay to show loading state
     },
     matchesSelectedTerm: function matchesSelectedTerm(group) {
       var term = this.extractGroupTerm(group);
@@ -331,8 +382,8 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.files = {};
       for (var i = 0; i < this.order.length; i++) {
         key = this.order[i];
-        var isShown = [].concat(_toConsumableArray(this.mainGroups), _toConsumableArray(this.lastGroups || [])).find(function (group) {
-          return (group === null || group === void 0 ? void 0 : group.key) === key;
+        var isShown = [].concat(_toConsumableArray(this.visibleGroups), _toConsumableArray(this.lastGroups || [])).some(function (group) {
+          return group.key === key;
         });
         if (!isShown) {
           continue;
@@ -433,7 +484,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Remove a group
      */
     remove: function remove(key) {
-      var _this4 = this;
+      var _this7 = this;
       var index = this.order.indexOf(key);
       if (index < 0) return;
       if (this.paginate() && key.includes('-')) {
@@ -445,8 +496,8 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           id: id,
           layout: layout
         }).then(function () {
-          _this4.order.splice(index, 1);
-          delete _this4.groups[key];
+          _this7.order.splice(index, 1);
+          delete _this7.groups[key];
         })["catch"](function (result) {
           var _result$response;
           Nova.error(((_result$response = result.response) === null || _result$response === void 0 || (_result$response = _result$response.data) === null || _result$response === void 0 ? void 0 : _result$response.message) || 'Failed to delete group from server');
@@ -458,7 +509,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       }
     },
     initSortable: function initSortable() {
-      var _this5 = this;
+      var _this8 = this;
       var containerRef = this.$refs["flexibleFieldContainer"];
       if (!containerRef || this.sortableInstance) {
         return;
@@ -477,8 +528,8 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           var oldIndex = evt.oldIndex;
           var newIndex = evt.newIndex;
           if (oldIndex === newIndex) return;
-          var movedKey = _this5.order.splice(oldIndex, 1)[0];
-          _this5.order.splice(newIndex, 0, movedKey);
+          var movedKey = _this8.order.splice(oldIndex, 1)[0];
+          _this8.order.splice(newIndex, 0, movedKey);
 
           // if (newIndex < oldIndex) {
           //   this.moveUp(key);
@@ -538,11 +589,11 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       "default": true
     }
   }, (0,laravel_nova__WEBPACK_IMPORTED_MODULE_0__.mapProps)(["resourceName", "resourceId", "mode"])),
-  emits: ["move-up", "move-down", "remove"],
+  emits: ["move-up", "move-down", "remove", "mounted"],
   data: function data() {
     return {
       removeMessage: false,
-      collapsed: this.group.collapsed,
+      collapsed: this.group.collapsed || false,
       readonly: this.group.readonly
     };
   },
@@ -565,6 +616,10 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       }
       return classes;
     }
+  },
+  mounted: function mounted() {
+    // Emit a mounted event when the component is first mounted
+    this.$emit('mounted');
   },
   methods: {
     /**
@@ -1049,6 +1104,13 @@ var _hoisted_5 = {
   key: 0,
   "class": "load-more-container"
 };
+var _hoisted_6 = ["disabled"];
+var _hoisted_7 = {
+  key: 0,
+  "class": "spinner-border spinner-border-sm mr-2",
+  role: "status",
+  "aria-hidden": "true"
+};
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_Multiselect = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("Multiselect");
   var _component_form_nova_flexible_content_group = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("form-nova-flexible-content-group");
@@ -1079,10 +1141,10 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         placeholder: "Filter by Active Term",
         "track-by": "value",
         searchable: true
-      }, null, 8 /* PROPS */, ["modelValue", "options"])])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Main groups "), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_4, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.mainGroups, function (group, groupIndex) {
+      }, null, 8 /* PROPS */, ["modelValue", "options"])])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Main groups "), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_4, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.visibleGroups, function (group, groupIndex) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
-          dusk: _ctx.field.attribute + '-' + groupIndex,
           key: group.key,
+          dusk: _ctx.field.attribute + '-' + groupIndex,
           field: _ctx.field,
           group: group,
           index: groupIndex,
@@ -1100,20 +1162,26 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             return $options.remove(group.key);
           },
           draggable: !$options.showLoadMoreButton,
-          moveDownStatus: !$options.showLoadMoreButton || groupIndex != $options.mainGroups.length - 1
-        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus"]);
-      }), 128 /* KEYED_FRAGMENT */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+          moveDownStatus: !($options.showLoadMoreButton && groupIndex === $options.visibleGroups.length - 1) && groupIndex !== $options.filteredGroupsFull.length - 1,
+          onMounted: function onMounted($event) {
+            return $options.trackRendered(group.key);
+          }
+        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus", "onMounted"]);
+      }), 128 /* KEYED_FRAGMENT */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
         onClick: _cache[3] || (_cache[3] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
         }),
-        "class": "btn btn-default btn-primary"
-      }, " Load More "), _cache[5] || (_cache[5] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("hr", {
+        "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)(["btn btn-default btn-primary", {
+          'opacity-75 cursor-not-allowed': $data.isLoading
+        }]),
+        disabled: $data.isLoading
+      }, [$data.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("span", _hoisted_7)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($data.isLoading ? 'Loading...' : 'Load More'), 1 /* TEXT */)], 10 /* CLASS, PROPS */, _hoisted_6), _cache[5] || (_cache[5] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("hr", {
         "class": "last-divider mb-3"
-      }, null, -1 /* HOISTED */))])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Divider and last group "), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.lastGroups, function (group, groupIndex) {
+      }, null, -1 /* HOISTED */))])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Last groups "), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.lastGroups, function (group, groupIndex) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
+          key: 'last-' + group.key,
           dusk: _ctx.field.attribute + '-' + ($options.filteredGroupsFull.length - $data.initialGroupsCount) + groupIndex,
           draggable: !$options.showLoadMoreButton,
-          key: group.key,
           field: _ctx.field,
           group: group,
           index: $options.filteredGroupsFull.length - $data.initialGroupsCount + groupIndex,
@@ -1121,8 +1189,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           "resource-id": _ctx.resourceId,
           errors: _ctx.errors,
           mode: _ctx.mode,
-          moveUpStatus: !$options.showLoadMoreButton || groupIndex != 0,
-          moveDownStatus: !$options.showLoadMoreButton || $options.lastGroups.length > 1 && groupIndex != $options.lastGroups.length - 1,
+          moveUpStatus: !$options.showLoadMoreButton || groupIndex !== 0,
+          moveDownStatus: !$options.showLoadMoreButton || $options.lastGroups.length > 1 && groupIndex !== $options.lastGroups.length - 1,
           onMoveUp: function onMoveUp($event) {
             return $options.moveUp(group.key);
           },
@@ -1284,9 +1352,9 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     no: $props.field.confirmRemoveNo
   }, null, 8 /* PROPS */, ["onConfirm", "message", "yes", "no"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)], 2 /* CLASS */)], 2 /* CLASS */)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
     "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)($options.containerStyle)
-  }, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.group.fields, function (item, index) {
+  }, [_cache[6] || ((0,vue__WEBPACK_IMPORTED_MODULE_0__.setBlockTracking)(-1, true), (_cache[6] = ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.group.fields, function (item, index) {
     return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)('form-' + item.component), {
-      key: index,
+      key: item.key || index,
       "resource-name": _ctx.resourceName,
       "resource-id": _ctx.resourceId,
       field: item,
@@ -1297,7 +1365,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         'remove-bottom-border': index == $props.group.fields.length - 1
       })
     }, null, 8 /* PROPS */, ["resource-name", "resource-id", "field", "errors", "mode", "show-help-text", "class"]);
-  }), 128 /* KEYED_FRAGMENT */))], 2 /* CLASS */)])], 8 /* PROPS */, _hoisted_1);
+  }), 128 /* KEYED_FRAGMENT */))).cacheIndex = 6, (0,vue__WEBPACK_IMPORTED_MODULE_0__.setBlockTracking)(1), _cache[6])], 2 /* CLASS */)])], 8 /* PROPS */, _hoisted_1);
 }
 
 /***/ }),
