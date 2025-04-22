@@ -407,6 +407,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           key: group.key,
           attributes: group.attributes
         });
+
         // Attach the files for formData appending
         this.files = _objectSpread(_objectSpread({}, this.files), group.files);
       }
@@ -619,6 +620,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     group: {},
     index: {},
     field: {},
+    order: {},
     draggable: {
       type: Boolean,
       "default": true
@@ -631,14 +633,24 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       type: Boolean,
       "default": true
     }
-  }, (0,laravel_nova__WEBPACK_IMPORTED_MODULE_0__.mapProps)(["resourceName", "resourceId", "mode"])),
+  }, (0,laravel_nova__WEBPACK_IMPORTED_MODULE_0__.mapProps)(["resourceName", "resourceId", "mode", 'order'])),
   emits: ["move-up", "move-down", "remove"],
   data: function data() {
     return {
       removeMessage: false,
       collapsed: this.group.collapsed || false,
-      readonly: this.group.readonly
+      readonly: this.group.readonly,
+      isFiltering: false
     };
+  },
+  mounted: function mounted() {
+    var _this = this;
+    Nova.$on('set-button-state', function (state) {
+      _this.isFiltering = state;
+    });
+  },
+  beforeDestroy: function beforeDestroy() {
+    Nova.$off('set-button-state');
   },
   computed: {
     titleStyle: function titleStyle() {
@@ -660,14 +672,18 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return classes;
     },
     groupOrder: function groupOrder() {
+      var _this$group$order;
       var orderField = this.group.fields.find(function (f) {
         return f.attribute.endsWith('__order');
       });
-      var order = orderField ? orderField.value : this.index;
-      return order + 1;
+      var maxOrder = (_this$group$order = this.group.order) !== null && _this$group$order !== void 0 ? _this$group$order : 0;
+      var orderValue = orderField ? orderField.value : 0;
+      var order = orderValue !== null && orderValue !== void 0 ? orderValue : maxOrder;
+      return Number(order) + 1;
     }
   },
   methods: {
+    groupOrderState: function groupOrderState(value) {},
     /**
      * Move this group up
      */
@@ -1224,6 +1240,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           "resource-id": _ctx.resourceId,
           errors: _ctx.errors,
           mode: _ctx.mode,
+          order: $data.order,
           onMoveUp: function onMoveUp($event) {
             return $options.moveUp(group.key);
           },
@@ -1235,7 +1252,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           },
           draggable: !$options.showLoadMoreButton,
           moveDownStatus: !($options.showLoadMoreButton && groupIndex === $options.visibleGroups.length - 1) && groupIndex !== $options.filteredGroupsFull.length - 1
-        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus"]);
+        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "order", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus"]);
       }), 128 /* KEYED_FRAGMENT */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_6, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
         onClick: _cache[3] || (_cache[3] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
@@ -1258,6 +1275,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           "resource-id": _ctx.resourceId,
           errors: _ctx.errors,
           mode: _ctx.mode,
+          order: $data.order,
           moveUpStatus: !$options.showLoadMoreButton || groupIndex !== 0,
           moveDownStatus: !$options.showLoadMoreButton || $options.lastGroups.length > 1 && groupIndex !== $options.lastGroups.length - 1,
           onMoveUp: function onMoveUp($event) {
@@ -1269,7 +1287,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           onRemove: function onRemove($event) {
             return $options.remove(group.key);
           }
-        }, null, 8 /* PROPS */, ["dusk", "draggable", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "moveUpStatus", "moveDownStatus", "onMoveUp", "onMoveDown", "onRemove"]);
+        }, null, 8 /* PROPS */, ["dusk", "draggable", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "order", "moveUpStatus", "moveDownStatus", "onMoveUp", "onMoveDown", "onRemove"]);
       }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
         layouts: $options.layouts,
         field: _ctx.field,
@@ -1362,7 +1380,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "minus",
     type: "micro",
     "class": "align-top"
-  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, "#" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($options.groupOrder), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, " #" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($data.isFiltering ? $options.groupOrder : $props.index + 1), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
     key: 0,
     dusk: "drag-group",
     type: "button",

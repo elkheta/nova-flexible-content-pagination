@@ -17,7 +17,9 @@
           </button>
 
           <p class="text-80 grow px-4">
-            <span class="mr-3 font-semibold">#{{ groupOrder }}</span>
+            <span class="mr-3 font-semibold">
+              #{{ isFiltering ? groupOrder : index + 1 }}
+            </span>
             {{ group.title }}
           </p>
 
@@ -68,6 +70,7 @@ export default {
     group: {},
     index: {},
     field: {},
+    order: {},
     draggable: {
       type: Boolean,
       default: true,
@@ -81,7 +84,7 @@ export default {
       default: true,
     },
 
-    ...mapProps(["resourceName", "resourceId", "mode"]),
+    ...mapProps(["resourceName", "resourceId", "mode", 'order']),
   },
 
   emits: ["move-up", "move-down", "remove"],
@@ -91,9 +94,17 @@ export default {
       removeMessage: false,
       collapsed: this.group.collapsed || false,
       readonly: this.group.readonly,
+      isFiltering: false,
     };
   },
-
+  mounted() {
+    Nova.$on('set-button-state', (state) => {
+      this.isFiltering = state;
+    });
+  },
+  beforeDestroy() {
+    Nova.$off('set-button-state');
+  },
   computed: {
     titleStyle() {
       let classes = [
@@ -135,12 +146,16 @@ export default {
     },
     groupOrder() {
       const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'))
-      const order = orderField ? orderField.value : this.index
-      return order + 1;
-    }
+      const maxOrder = this.group.order ?? 0;
+      const orderValue = orderField ? orderField.value : 0
+      const order = orderValue ?? maxOrder;
+      return Number(order) + 1;
+    },
   },
 
   methods: {
+    groupOrderState(value) {
+    },
     /**
      * Move this group up
      */

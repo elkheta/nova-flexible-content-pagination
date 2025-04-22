@@ -26,6 +26,7 @@
           </div>
         </div>
 
+
         <form-nova-flexible-content-group 
           v-for="(group, groupIndex) in visibleGroups"
           :key="group.key" 
@@ -37,6 +38,7 @@
           :resource-id="resourceId" 
           :errors="errors" 
           :mode="mode"
+          :order="order"
           @move-up="moveUp(group.key)" 
           @move-down="moveDown(group.key)" 
           @remove="remove(group.key)" 
@@ -66,6 +68,7 @@
           :resource-id="resourceId" 
           :errors="errors" 
           :mode="mode"
+          :order="order"
           :moveUpStatus="!showLoadMoreButton || groupIndex !== 0"   
           :moveDownStatus="!showLoadMoreButton || (lastGroups.length > 1 && groupIndex !== lastGroups.length - 1)" 
           @move-up="moveUp(group.key)" 
@@ -349,6 +352,7 @@ export default {
           attributes: group.attributes,
           
         });
+        
         // Attach the files for formData appending
         this.files = { ...this.files, ...group.files };
       }
