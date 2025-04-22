@@ -81,7 +81,7 @@ class Flexible extends Field
     public function __construct($name, $attribute = null, $resolveCallback = null)
     {
         parent::__construct($name, $attribute, $resolveCallback);
-
+        dd($this->attribute);
         $this->button(__('Add layout'));
 
         // The original menu as default
@@ -94,7 +94,7 @@ class Flexible extends Field
      * @param  string  $component The name of the component to use for the menu
      * @param  array  $data
      * @return $this
-     */
+     */ 
     public function menu($component, $data = [])
     {
         return $this->withMeta(['menu' => compact('component', 'data')]);
