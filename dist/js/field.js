@@ -341,10 +341,8 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     },
     emitButtonState: function emitButtonState() {
       if (this.searchName == "" && this.selectedTerm == null) {
-        console.log(false);
         Nova.$emit('set-button-state', false);
       } else {
-        console.log(true);
         Nova.$emit('set-button-state', true);
       }
     },
@@ -660,6 +658,13 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         classes.push("hidden");
       }
       return classes;
+    },
+    groupOrder: function groupOrder() {
+      var orderField = this.group.fields.find(function (f) {
+        return f.attribute.endsWith('__order');
+      });
+      var order = orderField ? orderField.value : this.index;
+      return order + 1;
     }
   },
   methods: {
@@ -1357,7 +1362,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "minus",
     type: "micro",
     "class": "align-top"
-  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, "#" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.index + 1), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, "#" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($options.groupOrder), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
     key: 0,
     dusk: "drag-group",
     type: "button",
@@ -1839,7 +1844,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.group-control:focus {\n  outline: none;\n}\n.group-control:hover {\n  color: rgb(var(--colors-primary-400));\n}\n.confirm-message {\n  position: absolute;\n  overflow: visible;\n  right: 38px;\n  bottom: 0;\n  width: auto;\n  border-radius: 4px;\n  padding: 6px 7px;\n  border: 1px solid #b7cad6;\n  background-color: var(--20);\n  white-space: nowrap;\n}\n[dir=\"rtl\"] .confirm-message {\n  right: auto;\n  left: 35px;\n}\n.confirm-message .text-danger {\n  color: #ee3f22;\n}\n.rounded-l {\n  border-top-left-radius: 0.25rem; /* 4px */\n  border-bottom-left-radius: 0.25rem; /* 4px */\n}\n.rounded-t-lg {\n  border-top-right-radius: 0.5rem; /* 8px */\n  border-top-left-radius: 0.5rem; /* 8px */\n}\n.rounded-b-lg {\n  border-bottom-left-radius: 0.5rem; /* 8px */\n  border-bottom-right-radius: 0.5rem; /* 8px */\n}\n.box-content {\n  box-sizing: content-box;\n}\n.grow {\n  flex-grow: 1;\n}\n.grow-0 {\n  flex-grow: 0;\n}\n.shrink {\n  flex-shrink: 1;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.group-control:focus {\n  outline: none;\n}\n.group-control:hover {\n  color: rgb(var(--colors-primary-400));\n}\n.confirm-message {\n  position: absolute;\n  overflow: visible;\n  right: 38px;\n  bottom: 0;\n  width: auto;\n  border-radius: 4px;\n  padding: 6px 7px;\n  border: 1px solid #b7cad6;\n  background-color: var(--20);\n  white-space: nowrap;\n}\n[dir=\"rtl\"] .confirm-message {\n  right: auto;\n  left: 35px;\n}\n.confirm-message .text-danger {\n  color: #ee3f22;\n}\n.rounded-l {\n  border-top-left-radius: 0.25rem;\n  /* 4px */\n  border-bottom-left-radius: 0.25rem;\n  /* 4px */\n}\n.rounded-t-lg {\n  border-top-right-radius: 0.5rem;\n  /* 8px */\n  border-top-left-radius: 0.5rem;\n  /* 8px */\n}\n.rounded-b-lg {\n  border-bottom-left-radius: 0.5rem;\n  /* 8px */\n  border-bottom-right-radius: 0.5rem;\n  /* 8px */\n}\n.box-content {\n  box-sizing: content-box;\n}\n.grow {\n  flex-grow: 1;\n}\n.grow-0 {\n  flex-grow: 0;\n}\n.shrink {\n  flex-shrink: 1;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 

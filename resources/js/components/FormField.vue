@@ -272,10 +272,8 @@ export default {
     },
     emitButtonState() {
       if (this.searchName == "" && this.selectedTerm == null) {
-        console.log(false);
         Nova.$emit('set-button-state', false);
       } else {
-        console.log(true);
         Nova.$emit('set-button-state', true);
       }
     },

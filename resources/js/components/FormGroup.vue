@@ -2,120 +2,56 @@
   <div class="relative mb-4 pb-1" :id="group.key">
     <div class="w-full shrink">
       <div :class="titleStyle" v-if="group.title">
-        <div
-          class="h-8 leading-normal h-full flex items-center box-content"
-          :class="{
-            'border-b border-gray-200 dark:border-gray-700 ': !collapsed,
-          }"
-        >
-          <button
-            dusk="expand-group"
-            type="button"
+        <div class="h-8 leading-normal h-full flex items-center box-content" :class="{
+          'border-b border-gray-200 dark:border-gray-700 ': !collapsed,
+        }">
+          <button dusk="expand-group" type="button"
             class="shrink-0 group-control btn border-r border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
-            :title="__('Expand')"
-            @click.prevent="expand"
-            v-if="collapsed"
-          >
-            <Icon 
-              name="plus"
-              type="micro" 
-              class="align-top" />
+            :title="__('Expand')" @click.prevent="expand" v-if="collapsed">
+            <Icon name="plus" type="micro" class="align-top" />
           </button>
-          <button
-            dusk="collapse-group"
-            type="button"
+          <button dusk="collapse-group" type="button"
             class="group-control btn border-r border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
-            :title="__('Collapse')"
-            @click.prevent="collapse"
-            v-else
-          >
-            <Icon 
-              name="minus"
-              type="micro" 
-              class="align-top" />
+            :title="__('Collapse')" @click.prevent="collapse" v-else>
+            <Icon name="minus" type="micro" class="align-top" />
           </button>
 
           <p class="text-80 grow px-4">
-            <span class="mr-3 font-semibold">#{{ index + 1 }}</span>
+            <span class="mr-3 font-semibold">#{{ groupOrder }}</span>
             {{ group.title }}
           </p>
 
           <div class="flex" v-if="!readonly">
-            <button
-              v-if="draggable"
-              dusk="drag-group"
-              type="button"
+            <button v-if="draggable" dusk="drag-group" type="button"
               class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center nova-flexible-content-drag-button"
-              :title="__('Drag')"
-            >
-              <Icon 
-                name="selector" 
-                type="micro"
-                class="align-top" />
+              :title="__('Drag')">
+              <Icon name="selector" type="micro" class="align-top" />
             </button>
-            <button
-              dusk="move-up-group"
-              type="button"
-              v-if="moveUpStatus"
+            <button dusk="move-up-group" type="button" v-if="moveUpStatus"
               class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
-              :title="__('Move up')"
-              @click.prevent="moveUp"
-            >
-              <Icon 
-                name="arrow-up" 
-                type="micro"
-                class="align-top" />
+              :title="__('Move up')" @click.prevent="moveUp">
+              <Icon name="arrow-up" type="micro" class="align-top" />
             </button>
-            <button
-              dusk="move-down-group"
-              v-if="moveDownStatus"
-              type="button"
+            <button dusk="move-down-group" v-if="moveDownStatus" type="button"
               class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
-              :title="__('Move down')"
-              @click.prevent="moveDown"
-            >
-              <Icon
-                name="arrow-down"
-                class="align-top"
-                type="micro" />
+              :title="__('Move down')" @click.prevent="moveDown">
+              <Icon name="arrow-down" class="align-top" type="micro" />
             </button>
-            <button
-              dusk="delete-group"
-              type="button"
+            <button dusk="delete-group" type="button"
               class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
-              :title="__('Delete')"
-              @click.prevent="confirmRemove"
-            >
-              <Icon 
-                name="trash" 
-                class="align-top" 
-                type="micro" />
+              :title="__('Delete')" @click.prevent="confirmRemove">
+              <Icon name="trash" class="align-top" type="micro" />
             </button>
-            <delete-flexible-content-group-modal
-              v-if="removeMessage"
-              @confirm="remove"
-              @close="removeMessage = false"
-              :message="field.confirmRemoveMessage"
-              :yes="field.confirmRemoveYes"
-              :no="field.confirmRemoveNo"
-            />
+            <delete-flexible-content-group-modal v-if="removeMessage" @confirm="remove" @close="removeMessage = false"
+              :message="field.confirmRemoveMessage" :yes="field.confirmRemoveYes" :no="field.confirmRemoveNo" />
           </div>
         </div>
       </div>
       <div :class="containerStyle">
-        <component
-          v-for="(item, index) in group.fields"
-          :key="item.key || index"
-          :is="'form-' + item.component"
-          v-once
-          :resource-name="resourceName"
-          :resource-id="resourceId"
-          :field="item"
-          :errors="errors"
-          :mode="mode"
+        <component v-for="(item, index) in group.fields" :key="item.key || index" :is="'form-' + item.component" v-once
+          :resource-name="resourceName" :resource-id="resourceId" :field="item" :errors="errors" :mode="mode"
           :show-help-text="item.helpText != null"
-          :class="{ 'remove-bottom-border': index == group.fields.length - 1 }"
-        />
+          :class="{ 'remove-bottom-border': index == group.fields.length - 1 }" />
       </div>
     </div>
   </div>
@@ -197,6 +133,11 @@ export default {
 
       return classes;
     },
+    groupOrder() {
+      const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'))
+      const order = orderField ? orderField.value : this.index
+      return order + 1;
+    }
   },
 
   methods: {
@@ -253,9 +194,11 @@ export default {
 .group-control:focus {
   outline: none;
 }
+
 .group-control:hover {
   color: rgb(var(--colors-primary-400));
 }
+
 .confirm-message {
   position: absolute;
   overflow: visible;
@@ -268,6 +211,7 @@ export default {
   background-color: var(--20);
   white-space: nowrap;
 }
+
 [dir="rtl"] .confirm-message {
   right: auto;
   left: 35px;
@@ -278,18 +222,24 @@ export default {
 }
 
 .rounded-l {
-  border-top-left-radius: 0.25rem; /* 4px */
-  border-bottom-left-radius: 0.25rem; /* 4px */
+  border-top-left-radius: 0.25rem;
+  /* 4px */
+  border-bottom-left-radius: 0.25rem;
+  /* 4px */
 }
 
 .rounded-t-lg {
-  border-top-right-radius: 0.5rem; /* 8px */
-  border-top-left-radius: 0.5rem; /* 8px */
+  border-top-right-radius: 0.5rem;
+  /* 8px */
+  border-top-left-radius: 0.5rem;
+  /* 8px */
 }
 
 .rounded-b-lg {
-  border-bottom-left-radius: 0.5rem; /* 8px */
-  border-bottom-right-radius: 0.5rem; /* 8px */
+  border-bottom-left-radius: 0.5rem;
+  /* 8px */
+  border-bottom-right-radius: 0.5rem;
+  /* 8px */
 }
 
 .box-content {
