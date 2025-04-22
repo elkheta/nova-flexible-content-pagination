@@ -81,7 +81,7 @@ class Flexible extends Field
     public function __construct($name, $attribute = null, $resolveCallback = null)
     {
         parent::__construct($name, $attribute, $resolveCallback);
-        dd($this->attribute);
+   
         $this->button(__('Add layout'));
 
         // The original menu as default
