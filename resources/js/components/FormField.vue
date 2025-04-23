@@ -124,7 +124,6 @@ export default {
       searchName: '',
       tempSearchName: '', // Temporary holder before updating the reactive property
       isLoading: false,
-      previousVisibleCount: null, // Store previous visibleCount before filtering
       isFiltering: false, // Track if filtering/searching is in progress
     };
   },
@@ -164,24 +163,14 @@ export default {
       
       // When filtering
       if (this.searchName || this.selectedTerm) {
-        // Store current visibleCount if not already stored
-        if (this.previousVisibleCount === null) {
-          this.previousVisibleCount = this.visibleCount;
-          // Reset to initial count during search
-          this.visibleCount = this.field.initialItemsCount !== null
-            ? Math.max(this.field.initialItemsCount - 1, 1)
-            : this.filteredGroupsFull.length;
-        }
+        // Reset to initial count during search/filter
+        this.visibleCount = this.field.initialItemsCount !== null
+          ? Math.max(this.field.initialItemsCount - 1, 1)
+          : null;
         
         // Still show only up to visibleCount items even when filtering
         return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
       } else {
-        // Restore previous count if we're clearing a filter
-        if (this.previousVisibleCount !== null) {
-          this.visibleCount = this.previousVisibleCount;
-          this.previousVisibleCount = null;
-        }
-        
         // Show only up to visibleCount when not filtering
         return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
       }
