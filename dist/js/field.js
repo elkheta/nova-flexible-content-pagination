@@ -510,6 +510,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         }).then(function () {
           _this7.order.splice(index, 1);
           delete _this7.groups[key];
+          _this7.initialGroupsCount--;
         })["catch"](function (result) {
           var _result$response;
           Nova.error(((_result$response = result.response) === null || _result$response === void 0 || (_result$response = _result$response.data) === null || _result$response === void 0 ? void 0 : _result$response.message) || 'Failed to delete group from server');
@@ -518,6 +519,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         // No request needed, just delete locally
         this.order.splice(index, 1);
         delete this.groups[key];
+        this.initialGroupsCount--;
       }
     },
     initSortable: function initSortable() {
@@ -672,18 +674,14 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return classes;
     },
     groupOrder: function groupOrder() {
-      var _this$group$order;
       var orderField = this.group.fields.find(function (f) {
         return f.attribute.endsWith('__order');
       });
-      var maxOrder = (_this$group$order = this.group.order) !== null && _this$group$order !== void 0 ? _this$group$order : 0;
       var orderValue = orderField ? orderField.value : 0;
-      var order = orderValue !== null && orderValue !== void 0 ? orderValue : maxOrder;
-      return Number(order) + 1;
+      return Number(orderValue) + 1;
     }
   },
   methods: {
-    groupOrderState: function groupOrderState(value) {},
     /**
      * Move this group up
      */
@@ -863,10 +861,19 @@ __webpack_require__.r(__webpack_exports__);
       this.dropdownOrientation = "top";
     },
     setUpdateButton: function setUpdateButton(state) {
-      this.isWorking = state;
+      if (state) {
+        if (this.field.attribute == 'course_data') {
+          this.isWorking = true;
+        } else {
+          this.isWorking = false;
+        }
+      } else {
+        this.isWorking = false;
+      }
     }
   },
   mounted: function mounted() {
+    console.log(this.field);
     Nova.$on('set-button-state', this.setUpdateButton);
   }
 });
@@ -1116,9 +1123,9 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
   }, [$props.group.title ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
     key: 0,
     "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)($options.titleStyle)
-  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_2, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("\n             "), _cache[0] || (_cache[0] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_2, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("\r\n             "), _cache[0] || (_cache[0] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
     "class": "text-60 text-xs"
-  }, "#", -1 /* HOISTED */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("\n             "), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_3, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.index + 1), 1 /* TEXT */)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_4, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)], 2 /* CLASS */)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.group.fields, function (item, index) {
+  }, "#", -1 /* HOISTED */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("\r\n             "), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_3, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.index + 1), 1 /* TEXT */)]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_4, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)], 2 /* CLASS */)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.group.fields, function (item, index) {
     return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)('detail-' + item.component), {
       key: index,
       "resource-name": $props.resourceName,
@@ -1862,7 +1869,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.group-control:focus {\n  outline: none;\n}\n.group-control:hover {\n  color: rgb(var(--colors-primary-400));\n}\n.confirm-message {\n  position: absolute;\n  overflow: visible;\n  right: 38px;\n  bottom: 0;\n  width: auto;\n  border-radius: 4px;\n  padding: 6px 7px;\n  border: 1px solid #b7cad6;\n  background-color: var(--20);\n  white-space: nowrap;\n}\n[dir=\"rtl\"] .confirm-message {\n  right: auto;\n  left: 35px;\n}\n.confirm-message .text-danger {\n  color: #ee3f22;\n}\n.rounded-l {\n  border-top-left-radius: 0.25rem;\n  /* 4px */\n  border-bottom-left-radius: 0.25rem;\n  /* 4px */\n}\n.rounded-t-lg {\n  border-top-right-radius: 0.5rem;\n  /* 8px */\n  border-top-left-radius: 0.5rem;\n  /* 8px */\n}\n.rounded-b-lg {\n  border-bottom-left-radius: 0.5rem;\n  /* 8px */\n  border-bottom-right-radius: 0.5rem;\n  /* 8px */\n}\n.box-content {\n  box-sizing: content-box;\n}\n.grow {\n  flex-grow: 1;\n}\n.grow-0 {\n  flex-grow: 0;\n}\n.shrink {\n  flex-shrink: 1;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.group-control:focus {\r\n  outline: none;\n}\n.group-control:hover {\r\n  color: rgb(var(--colors-primary-400));\n}\n.confirm-message {\r\n  position: absolute;\r\n  overflow: visible;\r\n  right: 38px;\r\n  bottom: 0;\r\n  width: auto;\r\n  border-radius: 4px;\r\n  padding: 6px 7px;\r\n  border: 1px solid #b7cad6;\r\n  background-color: var(--20);\r\n  white-space: nowrap;\n}\n[dir=\"rtl\"] .confirm-message {\r\n  right: auto;\r\n  left: 35px;\n}\n.confirm-message .text-danger {\r\n  color: #ee3f22;\n}\n.rounded-l {\r\n  border-top-left-radius: 0.25rem;\r\n  /* 4px */\r\n  border-bottom-left-radius: 0.25rem;\r\n  /* 4px */\n}\n.rounded-t-lg {\r\n  border-top-right-radius: 0.5rem;\r\n  /* 8px */\r\n  border-top-left-radius: 0.5rem;\r\n  /* 8px */\n}\n.rounded-b-lg {\r\n  border-bottom-left-radius: 0.5rem;\r\n  /* 8px */\r\n  border-bottom-right-radius: 0.5rem;\r\n  /* 8px */\n}\n.box-content {\r\n  box-sizing: content-box;\n}\n.grow {\r\n  flex-grow: 1;\n}\n.grow-0 {\r\n  flex-grow: 0;\n}\n.shrink {\r\n  flex-shrink: 1;\n}\n.shrink-0 {\r\n  flex-shrink: 0;\n}\r\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -1886,7 +1893,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.top-full {\n  top: 100%;\n}\n.pin-b {\n  top: 100%;\n  bottom: auto;\n}\n.pin-t {\n  top: auto;\n  bottom: 100%;\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.top-full {\r\n  top: 100%;\n}\n.pin-b {\r\n  top: 100%;\r\n  bottom: auto;\n}\n.pin-t {\r\n  top: auto;\r\n  bottom: 100%;\n}\r\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 

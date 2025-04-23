@@ -276,7 +276,7 @@ export default {
     emitButtonState() {
       if (this.searchName == "" && this.selectedTerm == null) {
         Nova.$emit('set-button-state', false);
-      } else {
+      } else {        
         Nova.$emit('set-button-state', true);
       }
     },
@@ -495,6 +495,7 @@ export default {
           .then(() => {
             this.order.splice(index, 1);
             delete this.groups[key];
+            this.initialGroupsCount --;
           })
           .catch((result) => {
             Nova.error(result.response?.data?.message || 'Failed to delete group from server');
@@ -503,6 +504,7 @@ export default {
         // No request needed, just delete locally
         this.order.splice(index, 1);
         delete this.groups[key];
+        this.initialGroupsCount --;
       }
     },
     initSortable() {

@@ -146,16 +146,13 @@ export default {
     },
     groupOrder() {
       const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'))
-      const maxOrder = this.group.order ?? 0;
-      const orderValue = orderField ? orderField.value : 0
-      const order = orderValue ?? maxOrder;
-      return Number(order) + 1;
+      const orderValue = orderField ? orderField.value : 0;
+      return Number(orderValue) + 1;
     },
   },
 
   methods: {
-    groupOrderState(value) {
-    },
+
     /**
      * Move this group up
      */

@@ -133,10 +133,21 @@ export default {
       this.dropdownOrientation = "top";
     },
     setUpdateButton(state) {
-    this.isWorking = state;
-  },
+      if(state){
+        if(this.field.attribute == 'course_data'){
+          this.isWorking = true;
+        }else {
+          this.isWorking = false;
+        }
+      }else {
+        this.isWorking = false;
+      }
+     
+      
+    },
   },
   mounted(){
+    console.log(this.field);
     Nova.$on('set-button-state', this.setUpdateButton);
   },
 };
