@@ -140,20 +140,20 @@ export default {
       }, []);
     },
     filteredGroupsFull() {
-      return this.orderedGroups.filter(group => {
-        let termMatch = false;
-        let nameMatch = false;
-        let match = false;
-        if (this.hasActiveTermFilter && this.selectedTerm) {
-          termMatch = this.matchesSelectedTerm(group);
-          match = true;
-        }
-        if (this.searchable && this.searchName) {
-          nameMatch = this.matchesSearchName(group);
-          match = true;
-        }
-        return match ? termMatch || nameMatch : true;
-      });
+      // Start with all ordered groups
+      let filteredGroups = this.orderedGroups;
+      
+      // First filter by term if term filter is active
+      if (this.hasActiveTermFilter && this.selectedTerm) {
+        filteredGroups = filteredGroups.filter(group => this.matchesSelectedTerm(group));
+      }
+      
+      // Then filter by search name if search is active
+      if (this.searchable && this.searchName) {
+        filteredGroups = filteredGroups.filter(group => this.matchesSearchName(group));
+      }
+      
+      return filteredGroups;
     },
     visibleGroups() {
       // Use the main end index calculation regardless of filtering

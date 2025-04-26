@@ -217,20 +217,23 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     },
     filteredGroupsFull: function filteredGroupsFull() {
       var _this2 = this;
-      return this.orderedGroups.filter(function (group) {
-        var termMatch = false;
-        var nameMatch = false;
-        var match = false;
-        if (_this2.hasActiveTermFilter && _this2.selectedTerm) {
-          termMatch = _this2.matchesSelectedTerm(group);
-          match = true;
-        }
-        if (_this2.searchable && _this2.searchName) {
-          nameMatch = _this2.matchesSearchName(group);
-          match = true;
-        }
-        return match ? termMatch || nameMatch : true;
-      });
+      // Start with all ordered groups
+      var filteredGroups = this.orderedGroups;
+
+      // First filter by term if term filter is active
+      if (this.hasActiveTermFilter && this.selectedTerm) {
+        filteredGroups = filteredGroups.filter(function (group) {
+          return _this2.matchesSelectedTerm(group);
+        });
+      }
+
+      // Then filter by search name if search is active
+      if (this.searchable && this.searchName) {
+        filteredGroups = filteredGroups.filter(function (group) {
+          return _this2.matchesSearchName(group);
+        });
+      }
+      return filteredGroups;
     },
     visibleGroups: function visibleGroups() {
       // Use the main end index calculation regardless of filtering
