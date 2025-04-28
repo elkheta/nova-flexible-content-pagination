@@ -18,7 +18,7 @@
 
           <p class="text-80 grow px-4">
             <span class="mr-3 font-semibold">
-              #{{ isFiltering ? groupOrder : index + 1 }}
+              #{{ groupOrder }}
             </span>
             {{ group.title }}
           </p>
@@ -94,14 +94,10 @@ export default {
       removeMessage: false,
       collapsed: this.group.collapsed || false,
       readonly: this.group.readonly,
-      isFiltering: false,
+      groupOrder: this.groupOrder()
     };
   },
-  mounted() {
-    Nova.$on('set-button-state', (state) => {
-      this.isFiltering = state;
-    });
-  },
+
   beforeDestroy() {
     Nova.$off('set-button-state');
   },
@@ -144,15 +140,15 @@ export default {
 
       return classes;
     },
-    groupOrder() {
-      const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'))
-      const orderValue = orderField ? orderField.value : 0;
-      return Number(orderValue) + 1;
-    },
+  
   },
 
   methods: {
-
+    groupOrder() {
+      const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'));
+      const orderValue = (orderField?.value == null) ? this.index : orderField.value;
+      return Number(orderValue) + 1;
+    },
     /**
      * Move this group up
      */

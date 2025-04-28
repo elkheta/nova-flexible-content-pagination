@@ -147,7 +147,6 @@ export default {
     },
   },
   mounted(){
-    console.log(this.field);
     Nova.$on('set-button-state', this.setUpdateButton);
   },
 };

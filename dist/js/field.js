@@ -238,18 +238,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     visibleGroups: function visibleGroups() {
       // Use the main end index calculation regardless of filtering
       var mainEndIndex = this.lastGroups ? this.filteredGroupsFull.length - this.initialGroupsCount : this.filteredGroupsFull.length;
-
-      // When filtering
-      if (this.searchName || this.selectedTerm) {
-        // Reset to initial count during search/filter
-        this.visibleCount = this.field.initialItemsCount !== null ? Math.max(this.field.initialItemsCount - 1, 1) : null;
-
-        // Still show only up to visibleCount items even when filtering
-        return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
-      } else {
-        // Show only up to visibleCount when not filtering
-        return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
-      }
+      return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
     },
     lastGroups: function lastGroups() {
       var groups = this.filteredGroupsFull;
@@ -331,6 +320,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       this.$forceUpdate();
     },
     emitButtonState: function emitButtonState() {
+      this.visibleCount = this.field.initialItemsCount !== null ? Math.max(this.field.initialItemsCount - 1, 1) : null;
       if (this.searchName == "" && this.selectedTerm == null) {
         Nova.$emit('set-button-state', false);
       } else {
@@ -633,14 +623,8 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       removeMessage: false,
       collapsed: this.group.collapsed || false,
       readonly: this.group.readonly,
-      isFiltering: false
+      groupOrder: this.groupOrder()
     };
-  },
-  mounted: function mounted() {
-    var _this = this;
-    Nova.$on('set-button-state', function (state) {
-      _this.isFiltering = state;
-    });
   },
   beforeDestroy: function beforeDestroy() {
     Nova.$off('set-button-state');
@@ -663,16 +647,16 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         classes.push("hidden");
       }
       return classes;
-    },
+    }
+  },
+  methods: {
     groupOrder: function groupOrder() {
       var orderField = this.group.fields.find(function (f) {
         return f.attribute.endsWith('__order');
       });
-      var orderValue = orderField ? orderField.value : 0;
+      var orderValue = (orderField === null || orderField === void 0 ? void 0 : orderField.value) == null ? this.index : orderField.value;
       return Number(orderValue) + 1;
-    }
-  },
-  methods: {
+    },
     /**
      * Move this group up
      */
@@ -864,7 +848,6 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   mounted: function mounted() {
-    console.log(this.field);
     Nova.$on('set-button-state', this.setUpdateButton);
   }
 });
@@ -1378,7 +1361,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "minus",
     type: "micro",
     "class": "align-top"
-  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, " #" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($data.isFiltering ? $options.groupOrder : $props.index + 1), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, " #" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($options.groupOrder), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
     key: 0,
     dusk: "drag-group",
     type: "button",

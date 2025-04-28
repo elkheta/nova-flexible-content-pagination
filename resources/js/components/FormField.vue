@@ -152,7 +152,7 @@ export default {
       if (this.searchable && this.searchName) {
         filteredGroups = filteredGroups.filter(group => this.matchesSearchName(group));
       }
-      
+
       return filteredGroups;
     },
     visibleGroups() {
@@ -161,19 +161,7 @@ export default {
         this.filteredGroupsFull.length - this.initialGroupsCount : 
         this.filteredGroupsFull.length;
       
-      // When filtering
-      if (this.searchName || this.selectedTerm) {
-        // Reset to initial count during search/filter
-        this.visibleCount = this.field.initialItemsCount !== null
-          ? Math.max(this.field.initialItemsCount - 1, 1)
-          : null;
-        
-        // Still show only up to visibleCount items even when filtering
-        return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
-      } else {
-        // Show only up to visibleCount when not filtering
-        return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
-      }
+      return this.filteredGroupsFull.slice(0, Math.min(this.visibleCount, mainEndIndex));
     },
     lastGroups() {
       const groups = this.filteredGroupsFull;
@@ -263,6 +251,9 @@ export default {
       this.$forceUpdate();
     },
     emitButtonState() {
+      this.visibleCount = this.field.initialItemsCount !== null
+      ? Math.max(this.field.initialItemsCount - 1, 1)
+      : null
       if (this.searchName == "" && this.selectedTerm == null) {
         Nova.$emit('set-button-state', false);
       } else {        
@@ -279,7 +270,9 @@ export default {
           this.orderedGroups.length - this.initialGroupsCount
         );
         this.isLoading = false;
+        
       }, 500); // Small delay to show loading state
+      
     },
     matchesSelectedTerm(group) {
       const term = this.extractGroupTerm(group);
