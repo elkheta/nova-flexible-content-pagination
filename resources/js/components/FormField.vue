@@ -26,55 +26,59 @@
           </div>
         </div>
 
-
-        <form-nova-flexible-content-group 
-          v-for="(group, groupIndex) in visibleGroups"
-          :key="group.key" 
-          :dusk="field.attribute + '-' + groupIndex" 
-          :field="field" 
-          :group="group" 
-          :index="groupIndex"
-          :resource-name="resourceName" 
-          :resource-id="resourceId" 
-          :errors="errors" 
-          :mode="mode"
-          :order="order"
-          @move-up="moveUp(group.key)" 
-          @move-down="moveDown(group.key)" 
-          @remove="remove(group.key)" 
-          :draggable="!showLoadMoreButton" 
-          :moveDownStatus="!(showLoadMoreButton && groupIndex === visibleGroups.length - 1) && (groupIndex !== filteredGroupsFull.length - 1)"
-        />
-
+          <form-nova-flexible-content-group 
+            v-for="(group, groupIndex) in visibleGroups"
+            :key="group.key" 
+            :dusk="field.attribute + '-' + groupIndex" 
+            :field="field" 
+            :group="group" 
+            :index="groupIndex"
+            :resource-name="resourceName" 
+            :resource-id="resourceId" 
+            :errors="errors" 
+            :mode="mode"
+            :order="order"
+            @move-up="moveUp(group.key)" 
+            @move-down="moveDown(group.key)" 
+            @remove="remove(group.key)" 
+            :draggable="!showLoadMoreButton" 
+            :moveDownStatus="!(showLoadMoreButton && groupIndex === visibleGroups.length - 1) && (groupIndex !== filteredGroupsFull.length - 1)"
+            />
+        
         <!-- Load more button -->
+        <div class="load-more-container" v-if="isLoading">
+          <div class="spinner-grow text-primary" role="status" >
+            <span class="sr-only"></span>
+          </div>
+        </div>
         <div class="load-more-container" v-if="showLoadMoreButton">
-          <button @click="loadMore" class="btn btn-default btn-primary" :class="{'opacity-75 cursor-not-allowed': isLoading}" :disabled="isLoading">
-            <span v-if="isLoading" class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
-            {{ isLoading ? 'Loading...' : 'Load More' }}
+          <button v-if="!isLoading" @click="loadMore" class="btn btn-default btn-primary opacity-75 cursor-not-allowed" >
+            <span  class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+            Load More
           </button>
           <hr class="last-divider mb-3" />
         </div>
 
         <!-- Last groups -->
-        <form-nova-flexible-content-group 
-          v-for="(group, groupIndex) in lastGroups"
-          :key="'last-' + group.key" 
-          :dusk="field.attribute + '-' + (filteredGroupsFull.length - initialGroupsCount) + groupIndex" 
-          :draggable="!showLoadMoreButton" 
-          :field="field" 
-          :group="group" 
-          :index="(filteredGroupsFull.length - initialGroupsCount) + groupIndex"
-          :resource-name="resourceName" 
-          :resource-id="resourceId" 
-          :errors="errors" 
-          :mode="mode"
-          :order="order"
-          :moveUpStatus="!showLoadMoreButton || groupIndex !== 0"   
-          :moveDownStatus="!showLoadMoreButton || (lastGroups.length > 1 && groupIndex !== lastGroups.length - 1)" 
-          @move-up="moveUp(group.key)" 
-          @move-down="moveDown(group.key)" 
-          @remove="remove(group.key)" 
-        />
+          <form-nova-flexible-content-group 
+            v-for="(group, groupIndex) in lastGroups"
+            :key="'last-' + group.key" 
+            :dusk="field.attribute + '-' + (filteredGroupsFull.length - initialGroupsCount) + groupIndex" 
+            :draggable="!showLoadMoreButton" 
+            :field="field" 
+            :group="group" 
+            :index="(filteredGroupsFull.length - initialGroupsCount) + groupIndex"
+            :resource-name="resourceName" 
+            :resource-id="resourceId" 
+            :errors="errors" 
+            :mode="mode"
+            :order="order"
+            :moveUpStatus="!showLoadMoreButton || groupIndex !== 0"   
+            :moveDownStatus="!showLoadMoreButton || (lastGroups.length > 1 && groupIndex !== lastGroups.length - 1)" 
+            @move-up="moveUp(group.key)" 
+            @move-down="moveDown(group.key)" 
+            @remove="remove(group.key)" 
+          />
       </div>
 
       <component :layouts="layouts" :is="field.menu.component" :field="field" :limit-counter="limitCounter"
@@ -261,18 +265,55 @@ export default {
       }
     },
     loadMore() {
+      // Start loading state
       this.isLoading = true;
       
-      // Using setTimeout to simulate async loading behavior
-      setTimeout(() => {
-        this.visibleCount = Math.min(
-          this.visibleCount + (this.field.paginationCount || 0),
-          this.orderedGroups.length - this.initialGroupsCount
-        );
-        this.isLoading = false;
-        
-      }, 500); // Small delay to show loading state
+      const batchSize = this.field.paginationCount || 10;
+      const startIndex = this.visibleCount;
+      const endIndex = Math.min(
+        startIndex + batchSize,
+        this.orderedGroups.length - this.initialGroupsCount
+      );
       
+      // IMMEDIATE UPDATE: Show the first item immediately for better UX
+      // This gives immediate feedback that something is happening
+      this.visibleCount = startIndex + 1;
+      
+      // Give the browser a moment to render the first item
+      this.$nextTick(() => {
+        // If we only had one item to load, we're done
+        if (startIndex + 1 >= endIndex) {
+          this.isLoading = false;
+          return;
+        }
+        
+        // Process the rest of the items in smaller batches
+        // Starting from the second item (we already showed the first)
+        setTimeout(() => {
+          this.processNextBatch(startIndex, endIndex, 1);
+        }, 50);
+      });
+    },
+    
+    processNextBatch(startIndex, endIndex, currentIndex) {
+      // Process a small batch at a time to keep the UI responsive
+      const batchSize = 1; // Process 1 items at once
+      const nextIndex = Math.min(currentIndex + batchSize, endIndex - startIndex);
+      
+      // Update visibleCount to show processed items
+      this.visibleCount = startIndex + nextIndex;
+      
+      if (nextIndex < endIndex - startIndex) {
+        // Schedule next batch after a short delay
+        setTimeout(() => {
+          this.processNextBatch(startIndex, endIndex, nextIndex);
+        }, 50);
+      } else {
+        // We're done loading all requested items
+        this.$nextTick(() => {
+          this.isLoading = false;
+        });
+      }
     },
     matchesSelectedTerm(group) {
       const term = this.extractGroupTerm(group);

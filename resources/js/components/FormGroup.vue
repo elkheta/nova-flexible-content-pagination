@@ -18,7 +18,7 @@
 
           <p class="text-80 grow px-4">
             <span class="mr-3 font-semibold">
-              #{{ groupOrder }}
+              #{{ orderNumber }}
             </span>
             {{ group.title }}
           </p>
@@ -50,10 +50,10 @@
         </div>
       </div>
       <div :class="containerStyle">
-        <component v-for="(item, index) in group.fields" :key="item.key || index" :is="'form-' + item.component" v-once
-          :resource-name="resourceName" :resource-id="resourceId" :field="item" :errors="errors" :mode="mode"
-          :show-help-text="item.helpText != null"
-          :class="{ 'remove-bottom-border': index == group.fields.length - 1 }" />
+          <component v-for="(item, index) in group.fields" :key="item.key || index" :is="'form-' + item.component" v-once
+            :resource-name="resourceName" :resource-id="resourceId" :field="item" :errors="errors" :mode="mode"
+            :show-help-text="item.helpText != null"
+            :class="{ 'remove-bottom-border': index == group.fields.length - 1 }" />
       </div>
     </div>
   </div>
@@ -94,7 +94,7 @@ export default {
       removeMessage: false,
       collapsed: this.group.collapsed || false,
       readonly: this.group.readonly,
-      groupOrder: this.groupOrder()
+      orderNumber: this.calculateOrderNumber()
     };
   },
 
@@ -140,11 +140,10 @@ export default {
 
       return classes;
     },
-  
   },
 
   methods: {
-    groupOrder() {
+    calculateOrderNumber() {
       const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'));
       const orderValue = (orderField?.value == null) ? this.index : orderField.value;
       return Number(orderValue) + 1;

@@ -329,13 +329,50 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     },
     loadMore: function loadMore() {
       var _this6 = this;
+      // Start loading state
       this.isLoading = true;
+      var batchSize = this.field.paginationCount || 10;
+      var startIndex = this.visibleCount;
+      var endIndex = Math.min(startIndex + batchSize, this.orderedGroups.length - this.initialGroupsCount);
 
-      // Using setTimeout to simulate async loading behavior
-      setTimeout(function () {
-        _this6.visibleCount = Math.min(_this6.visibleCount + (_this6.field.paginationCount || 0), _this6.orderedGroups.length - _this6.initialGroupsCount);
-        _this6.isLoading = false;
-      }, 500); // Small delay to show loading state
+      // IMMEDIATE UPDATE: Show the first item immediately for better UX
+      // This gives immediate feedback that something is happening
+      this.visibleCount = startIndex + 1;
+
+      // Give the browser a moment to render the first item
+      this.$nextTick(function () {
+        // If we only had one item to load, we're done
+        if (startIndex + 1 >= endIndex) {
+          _this6.isLoading = false;
+          return;
+        }
+
+        // Process the rest of the items in smaller batches
+        // Starting from the second item (we already showed the first)
+        setTimeout(function () {
+          _this6.processNextBatch(startIndex, endIndex, 1);
+        }, 50);
+      });
+    },
+    processNextBatch: function processNextBatch(startIndex, endIndex, currentIndex) {
+      var _this7 = this;
+      // Process a small batch at a time to keep the UI responsive
+      var batchSize = 1; // Process 1 items at once
+      var nextIndex = Math.min(currentIndex + batchSize, endIndex - startIndex);
+
+      // Update visibleCount to show processed items
+      this.visibleCount = startIndex + nextIndex;
+      if (nextIndex < endIndex - startIndex) {
+        // Schedule next batch after a short delay
+        setTimeout(function () {
+          _this7.processNextBatch(startIndex, endIndex, nextIndex);
+        }, 50);
+      } else {
+        // We're done loading all requested items
+        this.$nextTick(function () {
+          _this7.isLoading = false;
+        });
+      }
     },
     matchesSelectedTerm: function matchesSelectedTerm(group) {
       var term = this.extractGroupTerm(group);
@@ -477,7 +514,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Remove a group
      */
     remove: function remove(key) {
-      var _this7 = this;
+      var _this8 = this;
       var index = this.order.indexOf(key);
       if (index < 0) return;
       if (this.paginate() && key.includes('-')) {
@@ -489,9 +526,9 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           id: id,
           layout: layout
         }).then(function () {
-          _this7.order.splice(index, 1);
-          delete _this7.groups[key];
-          _this7.initialGroupsCount--;
+          _this8.order.splice(index, 1);
+          delete _this8.groups[key];
+          _this8.initialGroupsCount--;
         })["catch"](function (result) {
           var _result$response;
           Nova.error(((_result$response = result.response) === null || _result$response === void 0 || (_result$response = _result$response.data) === null || _result$response === void 0 ? void 0 : _result$response.message) || 'Failed to delete group from server');
@@ -504,7 +541,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       }
     },
     initSortable: function initSortable() {
-      var _this8 = this;
+      var _this9 = this;
       var containerRef = this.$refs["flexibleFieldContainer"];
       if (!containerRef || this.sortableInstance) {
         return;
@@ -523,8 +560,8 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           var oldIndex = evt.oldIndex;
           var newIndex = evt.newIndex;
           if (oldIndex === newIndex) return;
-          var movedKey = _this8.order.splice(oldIndex, 1)[0];
-          _this8.order.splice(newIndex, 0, movedKey);
+          var movedKey = _this9.order.splice(oldIndex, 1)[0];
+          _this9.order.splice(newIndex, 0, movedKey);
 
           // if (newIndex < oldIndex) {
           //   this.moveUp(key);
@@ -535,34 +572,34 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       });
     },
     onInputChange: function onInputChange(event) {
-      var _this9 = this;
-      // Always show spinner immediately
-      this.isFiltering = true;
-
-      // Use a short timeout to ensure spinner is displayed first
-      setTimeout(function () {
-        // Then update the actual searchName which triggers computation
-        _this9.searchName = _this9.tempSearchName;
-
-        // Force a longer spinner display time
-        setTimeout(function () {
-          _this9.isFiltering = false;
-        }, 1000);
-      }, 50);
-    },
-    onTermChange: function onTermChange(value) {
       var _this10 = this;
       // Always show spinner immediately
       this.isFiltering = true;
 
       // Use a short timeout to ensure spinner is displayed first
       setTimeout(function () {
-        // Then update the actual selectedTerm which triggers computation
-        _this10.selectedTerm = _this10.tempSelectedTerm;
+        // Then update the actual searchName which triggers computation
+        _this10.searchName = _this10.tempSearchName;
 
         // Force a longer spinner display time
         setTimeout(function () {
           _this10.isFiltering = false;
+        }, 1000);
+      }, 50);
+    },
+    onTermChange: function onTermChange(value) {
+      var _this11 = this;
+      // Always show spinner immediately
+      this.isFiltering = true;
+
+      // Use a short timeout to ensure spinner is displayed first
+      setTimeout(function () {
+        // Then update the actual selectedTerm which triggers computation
+        _this11.selectedTerm = _this11.tempSelectedTerm;
+
+        // Force a longer spinner display time
+        setTimeout(function () {
+          _this11.isFiltering = false;
         }, 1000);
       }, 50);
     }
@@ -623,7 +660,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       removeMessage: false,
       collapsed: this.group.collapsed || false,
       readonly: this.group.readonly,
-      groupOrder: this.groupOrder()
+      orderNumber: this.calculateOrderNumber()
     };
   },
   beforeDestroy: function beforeDestroy() {
@@ -650,7 +687,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     }
   },
   methods: {
-    groupOrder: function groupOrder() {
+    calculateOrderNumber: function calculateOrderNumber() {
       var orderField = this.group.fields.find(function (f) {
         return f.attribute.endsWith('__order');
       });
@@ -1152,12 +1189,9 @@ var _hoisted_6 = {
   key: 1,
   "class": "load-more-container"
 };
-var _hoisted_7 = ["disabled"];
-var _hoisted_8 = {
-  key: 0,
-  "class": "spinner-border spinner-border-sm mr-2",
-  role: "status",
-  "aria-hidden": "true"
+var _hoisted_7 = {
+  key: 2,
+  "class": "load-more-container"
 };
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   var _component_Multiselect = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("Multiselect");
@@ -1234,15 +1268,22 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           draggable: !$options.showLoadMoreButton,
           moveDownStatus: !($options.showLoadMoreButton && groupIndex === $options.visibleGroups.length - 1) && groupIndex !== $options.filteredGroupsFull.length - 1
         }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "order", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus"]);
-      }), 128 /* KEYED_FRAGMENT */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_6, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+      }), 128 /* KEYED_FRAGMENT */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $data.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_6, _cache[6] || (_cache[6] = [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+        "class": "spinner-grow text-primary",
+        role: "status"
+      }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+        "class": "sr-only"
+      })], -1 /* HOISTED */)]))) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), $options.showLoadMoreButton ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [!$data.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+        key: 0,
         onClick: _cache[3] || (_cache[3] = function () {
           return $options.loadMore && $options.loadMore.apply($options, arguments);
         }),
-        "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)(["btn btn-default btn-primary", {
-          'opacity-75 cursor-not-allowed': $data.isLoading
-        }]),
-        disabled: $data.isLoading
-      }, [$data.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("span", _hoisted_8)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($data.isLoading ? 'Loading...' : 'Load More'), 1 /* TEXT */)], 10 /* CLASS, PROPS */, _hoisted_7), _cache[6] || (_cache[6] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("hr", {
+        "class": "btn btn-default btn-primary opacity-75 cursor-not-allowed"
+      }, _cache[7] || (_cache[7] = [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", {
+        "class": "spinner-border spinner-border-sm mr-2",
+        role: "status",
+        "aria-hidden": "true"
+      }, null, -1 /* HOISTED */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" Load More ")]))) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), _cache[8] || (_cache[8] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("hr", {
         "class": "last-divider mb-3"
       }, null, -1 /* HOISTED */))])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Last groups "), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.lastGroups, function (group, groupIndex) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
@@ -1361,7 +1402,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "minus",
     type: "micro",
     "class": "align-top"
-  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, " #" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($options.groupOrder), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, " #" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($data.orderNumber), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
     key: 0,
     dusk: "drag-group",
     type: "button",
@@ -1843,7 +1884,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.group-control:focus {\r\n  outline: none;\n}\n.group-control:hover {\r\n  color: rgb(var(--colors-primary-400));\n}\n.confirm-message {\r\n  position: absolute;\r\n  overflow: visible;\r\n  right: 38px;\r\n  bottom: 0;\r\n  width: auto;\r\n  border-radius: 4px;\r\n  padding: 6px 7px;\r\n  border: 1px solid #b7cad6;\r\n  background-color: var(--20);\r\n  white-space: nowrap;\n}\n[dir=\"rtl\"] .confirm-message {\r\n  right: auto;\r\n  left: 35px;\n}\n.confirm-message .text-danger {\r\n  color: #ee3f22;\n}\n.rounded-l {\r\n  border-top-left-radius: 0.25rem;\r\n  /* 4px */\r\n  border-bottom-left-radius: 0.25rem;\r\n  /* 4px */\n}\n.rounded-t-lg {\r\n  border-top-right-radius: 0.5rem;\r\n  /* 8px */\r\n  border-top-left-radius: 0.5rem;\r\n  /* 8px */\n}\n.rounded-b-lg {\r\n  border-bottom-left-radius: 0.5rem;\r\n  /* 8px */\r\n  border-bottom-right-radius: 0.5rem;\r\n  /* 8px */\n}\n.box-content {\r\n  box-sizing: content-box;\n}\n.grow {\r\n  flex-grow: 1;\n}\n.grow-0 {\r\n  flex-grow: 0;\n}\n.shrink {\r\n  flex-shrink: 1;\n}\n.shrink-0 {\r\n  flex-shrink: 0;\n}\r\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.group-control:focus {\n  outline: none;\n}\n.group-control:hover {\n  color: rgb(var(--colors-primary-400));\n}\n.confirm-message {\n  position: absolute;\n  overflow: visible;\n  right: 38px;\n  bottom: 0;\n  width: auto;\n  border-radius: 4px;\n  padding: 6px 7px;\n  border: 1px solid #b7cad6;\n  background-color: var(--20);\n  white-space: nowrap;\n}\n[dir=\"rtl\"] .confirm-message {\n  right: auto;\n  left: 35px;\n}\n.confirm-message .text-danger {\n  color: #ee3f22;\n}\n.rounded-l {\n  border-top-left-radius: 0.25rem;\n  /* 4px */\n  border-bottom-left-radius: 0.25rem;\n  /* 4px */\n}\n.rounded-t-lg {\n  border-top-right-radius: 0.5rem;\n  /* 8px */\n  border-top-left-radius: 0.5rem;\n  /* 8px */\n}\n.rounded-b-lg {\n  border-bottom-left-radius: 0.5rem;\n  /* 8px */\n  border-bottom-right-radius: 0.5rem;\n  /* 8px */\n}\n.box-content {\n  box-sizing: content-box;\n}\n.grow {\n  flex-grow: 1;\n}\n.grow-0 {\n  flex-grow: 0;\n}\n.shrink {\n  flex-shrink: 1;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
