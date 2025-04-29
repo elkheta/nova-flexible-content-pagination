@@ -18,7 +18,7 @@
 
           <p class="text-80 grow px-4">
             <span class="mr-3 font-semibold">
-              #{{ orderNumber }}
+              #{{ calculateOrderNumber   }}
             </span>
             {{ group.title }}
           </p>
@@ -45,7 +45,8 @@
               <Icon name="trash" class="align-top" type="micro" />
             </button>
             <delete-flexible-content-group-modal v-if="removeMessage" @confirm="remove" @close="removeMessage = false"
-              :message="field.confirmRemoveMessage" :yes="field.confirmRemoveYes" :no="field.confirmRemoveNo" />
+              :message="field.confirmRemoveMessage" :yes="field.confirmRemoveYes" :no="field.confirmRemoveNo" :working="working"
+               />
           </div>
         </div>
       </div>
@@ -92,9 +93,9 @@ export default {
   data() {
     return {
       removeMessage: false,
+      working: false,
       collapsed: this.group.collapsed || false,
       readonly: this.group.readonly,
-      orderNumber: this.calculateOrderNumber()
     };
   },
 
@@ -102,6 +103,11 @@ export default {
     Nova.$off('set-button-state');
   },
   computed: {
+    calculateOrderNumber() {
+      const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'));
+      const orderValue = (orderField?.value == null) ? this.index : orderField.value;
+      return Number(orderValue) + 1;
+    },
     titleStyle() {
       let classes = [
         "border-t",
@@ -143,11 +149,7 @@ export default {
   },
 
   methods: {
-    calculateOrderNumber() {
-      const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'));
-      const orderValue = (orderField?.value == null) ? this.index : orderField.value;
-      return Number(orderValue) + 1;
-    },
+   
     /**
      * Move this group up
      */
@@ -166,6 +168,7 @@ export default {
      * Remove this group
      */
     remove() {
+      this.working = true;
       this.$emit("remove");
     },
 
