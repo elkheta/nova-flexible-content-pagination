@@ -516,18 +516,29 @@ export default {
             layout,
           })
           .then(() => {
+            if(this.paginate()){
+              let isInLastGroups = this.lastGroups?.some(group => group.key === key);
+              if(isInLastGroups && this.lastGroups?.length > 1){
+                this.initialGroupsCount --;
+              }
+            }
+           
             this.order.splice(index, 1);
             delete this.groups[key];
-            this.initialGroupsCount --;
+           
           })
           .catch((result) => {
             Nova.error(result.response?.data?.message || 'Failed to delete group from server');
           });
       } else {
         // No request needed, just delete locally
+        if(this.paginate()){
+          if(this.lastGroups?.length > 1){
+            this.initialGroupsCount --;
+          }
+        }
         this.order.splice(index, 1);
         delete this.groups[key];
-        this.initialGroupsCount --;
       }
     },
     initSortable() {

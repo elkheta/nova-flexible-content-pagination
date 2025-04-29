@@ -16,7 +16,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var laravel_nova_ui__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(laravel_nova_ui__WEBPACK_IMPORTED_MODULE_0__);
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
-  props: ["message", "yes", "no"],
+  props: ["message", "yes", "no", "working"],
   emits: ["close", "confirm"],
   components: {
     Button: laravel_nova_ui__WEBPACK_IMPORTED_MODULE_0__.Button
@@ -526,18 +526,31 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           id: id,
           layout: layout
         }).then(function () {
+          if (_this8.paginate()) {
+            var _this8$lastGroups, _this8$lastGroups2;
+            var isInLastGroups = (_this8$lastGroups = _this8.lastGroups) === null || _this8$lastGroups === void 0 ? void 0 : _this8$lastGroups.some(function (group) {
+              return group.key === key;
+            });
+            if (isInLastGroups && ((_this8$lastGroups2 = _this8.lastGroups) === null || _this8$lastGroups2 === void 0 ? void 0 : _this8$lastGroups2.length) > 1) {
+              _this8.initialGroupsCount--;
+            }
+          }
           _this8.order.splice(index, 1);
           delete _this8.groups[key];
-          _this8.initialGroupsCount--;
         })["catch"](function (result) {
           var _result$response;
           Nova.error(((_result$response = result.response) === null || _result$response === void 0 || (_result$response = _result$response.data) === null || _result$response === void 0 ? void 0 : _result$response.message) || 'Failed to delete group from server');
         });
       } else {
         // No request needed, just delete locally
+        if (this.paginate()) {
+          var _this$lastGroups;
+          if (((_this$lastGroups = this.lastGroups) === null || _this$lastGroups === void 0 ? void 0 : _this$lastGroups.length) > 1) {
+            this.initialGroupsCount--;
+          }
+        }
         this.order.splice(index, 1);
         delete this.groups[key];
-        this.initialGroupsCount--;
       }
     },
     initSortable: function initSortable() {
@@ -658,15 +671,22 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
   data: function data() {
     return {
       removeMessage: false,
+      working: false,
       collapsed: this.group.collapsed || false,
-      readonly: this.group.readonly,
-      orderNumber: this.calculateOrderNumber()
+      readonly: this.group.readonly
     };
   },
   beforeDestroy: function beforeDestroy() {
     Nova.$off('set-button-state');
   },
   computed: {
+    calculateOrderNumber: function calculateOrderNumber() {
+      var orderField = this.group.fields.find(function (f) {
+        return f.attribute.endsWith('__order');
+      });
+      var orderValue = (orderField === null || orderField === void 0 ? void 0 : orderField.value) == null ? this.index : orderField.value;
+      return Number(orderValue) + 1;
+    },
     titleStyle: function titleStyle() {
       var classes = ["border-t", "border-r", "border-l", "border-gray-200", "dark:border-gray-700", "rounded-t-lg"];
       if (this.collapsed) {
@@ -687,13 +707,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     }
   },
   methods: {
-    calculateOrderNumber: function calculateOrderNumber() {
-      var orderField = this.group.fields.find(function (f) {
-        return f.attribute.endsWith('__order');
-      });
-      var orderValue = (orderField === null || orderField === void 0 ? void 0 : orderField.value) == null ? this.index : orderField.value;
-      return Number(orderValue) + 1;
-    },
     /**
      * Move this group up
      */
@@ -710,6 +723,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Remove this group
      */
     remove: function remove() {
+      this.working = true;
       this.$emit("remove");
     },
     /**
@@ -1042,8 +1056,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_Button, {
             ref: "confirmButton",
             dusk: "confirm-delete-button",
-            loading: _ctx.working,
-            disabled: _ctx.working,
+            loading: $props.working,
+            disabled: $props.working,
             state: "danger",
             type: "submit"
           }, {
@@ -1402,7 +1416,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     name: "minus",
     type: "micro",
     "class": "align-top"
-  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, " #" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($data.orderNumber), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
+  })], 8 /* PROPS */, _hoisted_4)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_5, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_6, " #" + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($options.calculateOrderNumber), 1 /* TEXT */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.group.title), 1 /* TEXT */)]), !$data.readonly ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [$props.draggable ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("button", {
     key: 0,
     dusk: "drag-group",
     type: "button",
@@ -1458,8 +1472,9 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     }),
     message: $props.field.confirmRemoveMessage,
     yes: $props.field.confirmRemoveYes,
-    no: $props.field.confirmRemoveNo
-  }, null, 8 /* PROPS */, ["onConfirm", "message", "yes", "no"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)], 2 /* CLASS */)], 2 /* CLASS */)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+    no: $props.field.confirmRemoveNo,
+    working: $data.working
+  }, null, 8 /* PROPS */, ["onConfirm", "message", "yes", "no", "working"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)], 2 /* CLASS */)], 2 /* CLASS */)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
     "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)($options.containerStyle)
   }, [_cache[6] || ((0,vue__WEBPACK_IMPORTED_MODULE_0__.setBlockTracking)(-1, true), (_cache[6] = ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.group.fields, function (item, index) {
     return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)('form-' + item.component), {
