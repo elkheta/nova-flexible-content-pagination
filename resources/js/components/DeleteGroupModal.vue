@@ -48,11 +48,11 @@
 import { Button } from "laravel-nova-ui";
 
 export default {
-  props: ["message", "yes", "no"],
+  props: ["message", "yes", "no", "working"],
 
   emits: ["close", "confirm"],
 
-  components: { Button },
+  components: { Button }, 
 
   /**
    * Mount the component.
