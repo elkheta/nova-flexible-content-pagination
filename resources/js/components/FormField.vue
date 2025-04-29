@@ -33,6 +33,7 @@
             :field="field" 
             :group="group" 
             :index="groupIndex"
+            :deleteLoading="deleteLoading"
             :resource-name="resourceName" 
             :resource-id="resourceId" 
             :errors="errors" 
@@ -67,6 +68,7 @@
             :draggable="!showLoadMoreButton" 
             :field="field" 
             :group="group" 
+            :deleteLoading="deleteLoading"
             :index="(filteredGroupsFull.length - initialGroupsCount) + groupIndex"
             :resource-name="resourceName" 
             :resource-id="resourceId" 
@@ -76,7 +78,7 @@
             :moveUpStatus="!showLoadMoreButton || groupIndex !== 0"   
             :moveDownStatus="!showLoadMoreButton || (lastGroups.length > 1 && groupIndex !== lastGroups.length - 1)" 
             @move-up="moveUp(group.key)" 
-            @move-down="moveDown(group.key)" 
+            @move-down="moveDown(group.key)"  
             @remove="remove(group.key)" 
           />
       </div>
@@ -116,7 +118,7 @@ export default {
       visibleCount: this.field.initialItemsCount !== null
       ? Math.max(this.field.initialItemsCount - 1, 1)
       : null,
-
+      deleteLoading: false,
       selectedTerm: null,
       tempSelectedTerm: null, // Temporary holder before updating the reactive property
       availableTerms: [
@@ -505,6 +507,7 @@ export default {
      * Remove a group
      */
      remove(key) {
+      this.deleteLoading = true;
       let index = this.order.indexOf(key);
       if (index < 0) return;
       if (this.paginate() && key.includes('-')) {
@@ -525,10 +528,13 @@ export default {
            
             this.order.splice(index, 1);
             delete this.groups[key];
-           
+            this.deleteLoading = false;
+            Nova.success('Group deleted successfully');
+
           })
           .catch((result) => {
             Nova.error(result.response?.data?.message || 'Failed to delete group from server');
+            this.deleteLoading = false;
           });
       } else {
         // No request needed, just delete locally
@@ -539,7 +545,9 @@ export default {
         }
         this.order.splice(index, 1);
         delete this.groups[key];
+        this.deleteLoading = false;
       }
+     
     },
     initSortable() {
       const containerRef = this.$refs["flexibleFieldContainer"];

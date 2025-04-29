@@ -16,7 +16,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var laravel_nova_ui__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(laravel_nova_ui__WEBPACK_IMPORTED_MODULE_0__);
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
-  props: ["message", "yes", "no", "working"],
+  props: ["message", "yes", "no", "deleteLoading"],
   emits: ["close", "confirm"],
   components: {
     Button: laravel_nova_ui__WEBPACK_IMPORTED_MODULE_0__.Button
@@ -183,6 +183,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       initialGroupsCount: 1,
       sortableInstance: null,
       visibleCount: this.field.initialItemsCount !== null ? Math.max(this.field.initialItemsCount - 1, 1) : null,
+      deleteLoading: false,
       selectedTerm: null,
       tempSelectedTerm: null,
       // Temporary holder before updating the reactive property
@@ -515,6 +516,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      */
     remove: function remove(key) {
       var _this8 = this;
+      this.deleteLoading = true;
       var index = this.order.indexOf(key);
       if (index < 0) return;
       if (this.paginate() && key.includes('-')) {
@@ -537,9 +539,12 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           }
           _this8.order.splice(index, 1);
           delete _this8.groups[key];
+          _this8.deleteLoading = false;
+          Nova.success('Group deleted successfully');
         })["catch"](function (result) {
           var _result$response;
           Nova.error(((_result$response = result.response) === null || _result$response === void 0 || (_result$response = _result$response.data) === null || _result$response === void 0 ? void 0 : _result$response.message) || 'Failed to delete group from server');
+          _this8.deleteLoading = false;
         });
       } else {
         // No request needed, just delete locally
@@ -551,6 +556,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         }
         this.order.splice(index, 1);
         delete this.groups[key];
+        this.deleteLoading = false;
       }
     },
     initSortable: function initSortable() {
@@ -654,6 +660,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     index: {},
     field: {},
     order: {},
+    deleteLoading: {},
     draggable: {
       type: Boolean,
       "default": true
@@ -671,7 +678,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
   data: function data() {
     return {
       removeMessage: false,
-      working: false,
       collapsed: this.group.collapsed || false,
       readonly: this.group.readonly
     };
@@ -684,6 +690,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       var orderField = this.group.fields.find(function (f) {
         return f.attribute.endsWith('__order');
       });
+      console.log(orderField);
       var orderValue = (orderField === null || orderField === void 0 ? void 0 : orderField.value) == null ? this.index : orderField.value;
       return Number(orderValue) + 1;
     },
@@ -723,7 +730,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      * Remove this group
      */
     remove: function remove() {
-      this.working = true;
       this.$emit("remove");
     },
     /**
@@ -1056,8 +1062,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           }), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_Button, {
             ref: "confirmButton",
             dusk: "confirm-delete-button",
-            loading: $props.working,
-            disabled: $props.working,
+            loading: $props.deleteLoading,
+            disabled: $props.deleteLoading,
             state: "danger",
             type: "submit"
           }, {
@@ -1265,6 +1271,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           field: _ctx.field,
           group: group,
           index: groupIndex,
+          deleteLoading: $data.deleteLoading,
           "resource-name": _ctx.resourceName,
           "resource-id": _ctx.resourceId,
           errors: _ctx.errors,
@@ -1281,7 +1288,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           },
           draggable: !$options.showLoadMoreButton,
           moveDownStatus: !($options.showLoadMoreButton && groupIndex === $options.visibleGroups.length - 1) && groupIndex !== $options.filteredGroupsFull.length - 1
-        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "order", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus"]);
+        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "deleteLoading", "resource-name", "resource-id", "errors", "mode", "order", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus"]);
       }), 128 /* KEYED_FRAGMENT */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $data.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_6, _cache[6] || (_cache[6] = [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
         "class": "spinner-grow text-primary",
         role: "status"
@@ -1306,6 +1313,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           draggable: !$options.showLoadMoreButton,
           field: _ctx.field,
           group: group,
+          deleteLoading: $data.deleteLoading,
           index: $options.filteredGroupsFull.length - $data.initialGroupsCount + groupIndex,
           "resource-name": _ctx.resourceName,
           "resource-id": _ctx.resourceId,
@@ -1323,7 +1331,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           onRemove: function onRemove($event) {
             return $options.remove(group.key);
           }
-        }, null, 8 /* PROPS */, ["dusk", "draggable", "field", "group", "index", "resource-name", "resource-id", "errors", "mode", "order", "moveUpStatus", "moveDownStatus", "onMoveUp", "onMoveDown", "onRemove"]);
+        }, null, 8 /* PROPS */, ["dusk", "draggable", "field", "group", "deleteLoading", "index", "resource-name", "resource-id", "errors", "mode", "order", "moveUpStatus", "moveDownStatus", "onMoveUp", "onMoveDown", "onRemove"]);
       }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(_ctx.field.menu.component), {
         layouts: $options.layouts,
         field: _ctx.field,
@@ -1473,8 +1481,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     message: $props.field.confirmRemoveMessage,
     yes: $props.field.confirmRemoveYes,
     no: $props.field.confirmRemoveNo,
-    working: $data.working
-  }, null, 8 /* PROPS */, ["onConfirm", "message", "yes", "no", "working"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)], 2 /* CLASS */)], 2 /* CLASS */)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
+    deleteLoading: $props.deleteLoading
+  }, null, 8 /* PROPS */, ["onConfirm", "message", "yes", "no", "deleteLoading"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)], 2 /* CLASS */)], 2 /* CLASS */)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
     "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)($options.containerStyle)
   }, [_cache[6] || ((0,vue__WEBPACK_IMPORTED_MODULE_0__.setBlockTracking)(-1, true), (_cache[6] = ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.group.fields, function (item, index) {
     return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)('form-' + item.component), {

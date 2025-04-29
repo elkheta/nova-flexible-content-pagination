@@ -31,8 +31,8 @@
           <Button
             ref="confirmButton"
             dusk="confirm-delete-button"
-            :loading="working"
-            :disabled="working"
+            :loading="deleteLoading"
+            :disabled="deleteLoading"
             state="danger"
             type="submit"
           >
@@ -48,7 +48,7 @@
 import { Button } from "laravel-nova-ui";
 
 export default {
-  props: ["message", "yes", "no", "working"],
+  props: ["message", "yes", "no", "deleteLoading"],
 
   emits: ["close", "confirm"],
 

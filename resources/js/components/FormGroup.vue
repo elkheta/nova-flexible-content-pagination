@@ -45,7 +45,7 @@
               <Icon name="trash" class="align-top" type="micro" />
             </button>
             <delete-flexible-content-group-modal v-if="removeMessage" @confirm="remove" @close="removeMessage = false"
-              :message="field.confirmRemoveMessage" :yes="field.confirmRemoveYes" :no="field.confirmRemoveNo" :working="working"
+              :message="field.confirmRemoveMessage" :yes="field.confirmRemoveYes" :no="field.confirmRemoveNo" :deleteLoading="deleteLoading"
                />
           </div>
         </div>
@@ -72,6 +72,7 @@ export default {
     index: {},
     field: {},
     order: {},
+    deleteLoading: {},
     draggable: {
       type: Boolean,
       default: true,
@@ -92,8 +93,7 @@ export default {
 
   data() {
     return {
-      removeMessage: false,
-      working: false,
+      removeMessage: false, 
       collapsed: this.group.collapsed || false,
       readonly: this.group.readonly,
     };
@@ -105,6 +105,7 @@ export default {
   computed: {
     calculateOrderNumber() {
       const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'));
+      console.log(orderField);
       const orderValue = (orderField?.value == null) ? this.index : orderField.value;
       return Number(orderValue) + 1;
     },
@@ -168,7 +169,6 @@ export default {
      * Remove this group
      */
     remove() {
-      this.working = true;
       this.$emit("remove");
     },
 
