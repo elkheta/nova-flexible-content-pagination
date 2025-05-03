@@ -690,7 +690,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       var orderField = this.group.fields.find(function (f) {
         return f.attribute.endsWith('__order');
       });
-      console.log(orderField);
       var orderValue = (orderField === null || orderField === void 0 ? void 0 : orderField.value) == null ? this.index : orderField.value;
       return Number(orderValue) + 1;
     },

@@ -105,7 +105,6 @@ export default {
   computed: {
     calculateOrderNumber() {
       const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'));
-      console.log(orderField);
       const orderValue = (orderField?.value == null) ? this.index : orderField.value;
       return Number(orderValue) + 1;
     },
