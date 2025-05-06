@@ -386,12 +386,15 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       })) === null || _group$fields$find === void 0 ? void 0 : _group$fields$find.value;
     },
     matchesSearchName: function matchesSearchName(group) {
-      var search = this.searchName.toLowerCase();
+      // Remove all whitespace from search term
+      var search = this.searchName.toLowerCase().replace(/\s+/g, '');
+
+      // Get field values without trimming individual values
       var nameString = group.fields.filter(function (f) {
         return f.attribute.endsWith('__course_heading_name') || f.attribute.endsWith('__lesson_name') || f.attribute.endsWith('__lesson_label');
       }).map(function (f) {
         return f.value || '';
-      }).join(' ').toLowerCase();
+      }).join(' ').toLowerCase().replace(/\s+/g, ''); // Remove all whitespace after joining
       return nameString.includes(search);
     },
     /*

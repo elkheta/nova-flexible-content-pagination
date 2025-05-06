@@ -329,14 +329,18 @@ export default {
       )?.value;
     },
     matchesSearchName(group) {
-      const search = this.searchName.toLowerCase();
+      // Remove all whitespace from search term
+      const search = this.searchName.toLowerCase().replace(/\s+/g, '');
+
+      // Get field values without trimming individual values
       const nameString = group.fields
         .filter(f => f.attribute.endsWith('__course_heading_name') ||
           f.attribute.endsWith('__lesson_name') ||
           f.attribute.endsWith('__lesson_label'))
         .map(f => f.value || '')
         .join(' ')
-        .toLowerCase();
+        .toLowerCase()
+        .replace(/\s+/g, ''); // Remove all whitespace after joining
       return nameString.includes(search);
     },
 
