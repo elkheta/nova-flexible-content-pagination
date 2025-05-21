@@ -463,8 +463,11 @@ export default {
     addGroup(layout, attributes, key, collapsed, populate = false) {
       if (!layout) return;
 
-      collapsed = collapsed || false;
-
+     if(populate){
+        collapsed = collapsed || false;
+     }else {
+        collapsed = false;
+     }
       let fields = attributes || JSON.parse(JSON.stringify(layout.fields));
 
 

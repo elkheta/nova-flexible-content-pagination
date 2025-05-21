@@ -3,11 +3,11 @@ export default class Group {
     this.name = name;
     
     this.title = title;
+  
     this.fields = fields;
     this.key = key || this.getTemporaryUniqueKey(field.attribute);
     this.collapsed = collapsed;
     this.readonly = field.readonly;
-
     this.renameFields();
   }
 
@@ -17,7 +17,9 @@ export default class Group {
   values() {
     let formData = new FormData();
     for (var i = 0; i < this.fields.length; i++) {
-      this.fields[i].fill(formData);
+      if (typeof this.fields[i].fill === 'function') {
+        this.fields[i].fill(formData);
+      }
     }
     return formData;
   }

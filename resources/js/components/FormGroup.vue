@@ -51,10 +51,10 @@
         </div>
       </div>
       <div :class="containerStyle">
-          <component v-for="(item, index) in group.fields" :key="item.key || index" :is="'form-' + item.component" v-once
-            :resource-name="resourceName" :resource-id="resourceId" :field="item" :errors="errors" :mode="mode"
-            :show-help-text="item.helpText != null"
-            :class="{ 'remove-bottom-border': index == group.fields.length - 1 }" />
+        <component v-for="(item, index) in filteredFields" :key="item.key || index" :is="'form-' + item.component"  
+            :resource-name="resourceName" :resource-id="resourceId" :field="item" :errors="errors" :mode="mode"  
+              :show-help-text="item.helpText != null"
+            :class="{ 'remove-bottom-border': index == filteredFields.length - 1 }" />           
       </div>
     </div>
   </div>
@@ -96,6 +96,7 @@ export default {
       removeMessage: false, 
       collapsed: this.group.collapsed || false,
       readonly: this.group.readonly,
+      wasEverExpanded:  !this.group.collapsed || false,
     };
   },
 
@@ -103,6 +104,24 @@ export default {
     Nova.$off('set-button-state');
   },
   computed: {
+    // Filter fields into regular fields and nested flexible content fields
+    filteredFields() {
+      return this.group.fields.filter(item => {
+        // Always show regular components
+        if (item.component && item.component !== 'nova-flexible-content') {
+          return true;
+        }
+        
+        // Show nova-flexible-content only if wasEverCollapsed is true
+        if (item.component === 'nova-flexible-content' && this.wasEverExpanded) {
+          return true;
+        }
+        
+        return false;
+      });
+    },
+    
+    
     calculateOrderNumber() {
       const orderField = this.group.fields.find(f => f.attribute.endsWith('__order'));
       const orderValue = (orderField?.value == null) ? this.index : orderField.value;
@@ -124,6 +143,7 @@ export default {
 
       return classes;
     },
+    
     containerStyle() {
       let classes = [
         "grow",
@@ -187,6 +207,7 @@ export default {
      */
     expand() {
       this.collapsed = false;
+      this.wasEverExpanded = true;
     },
 
     /**

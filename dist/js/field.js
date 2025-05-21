@@ -486,7 +486,11 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     addGroup: function addGroup(layout, attributes, key, collapsed) {
       var populate = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
       if (!layout) return;
-      collapsed = collapsed || false;
+      if (populate) {
+        collapsed = collapsed || false;
+      } else {
+        collapsed = false;
+      }
       var fields = attributes || JSON.parse(JSON.stringify(layout.fields));
       var group = new _group__WEBPACK_IMPORTED_MODULE_3__["default"](layout.name, layout.title, fields, this.currentField, key, collapsed);
       this.groups[group.key] = group;
@@ -682,13 +686,30 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     return {
       removeMessage: false,
       collapsed: this.group.collapsed || false,
-      readonly: this.group.readonly
+      readonly: this.group.readonly,
+      wasEverExpanded: !this.group.collapsed || false
     };
   },
   beforeDestroy: function beforeDestroy() {
     Nova.$off('set-button-state');
   },
   computed: {
+    // Filter fields into regular fields and nested flexible content fields
+    filteredFields: function filteredFields() {
+      var _this = this;
+      return this.group.fields.filter(function (item) {
+        // Always show regular components
+        if (item.component && item.component !== 'nova-flexible-content') {
+          return true;
+        }
+
+        // Show nova-flexible-content only if wasEverCollapsed is true
+        if (item.component === 'nova-flexible-content' && _this.wasEverExpanded) {
+          return true;
+        }
+        return false;
+      });
+    },
     calculateOrderNumber: function calculateOrderNumber() {
       var orderField = this.group.fields.find(function (f) {
         return f.attribute.endsWith('__order');
@@ -749,6 +770,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
      */
     expand: function expand() {
       this.collapsed = false;
+      this.wasEverExpanded = true;
     },
     /**
      * Collapse fields
@@ -1486,7 +1508,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     deleteLoading: $props.deleteLoading
   }, null, 8 /* PROPS */, ["onConfirm", "message", "yes", "no", "deleteLoading"])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)])) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)], 2 /* CLASS */)], 2 /* CLASS */)) : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
     "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)($options.containerStyle)
-  }, [_cache[6] || ((0,vue__WEBPACK_IMPORTED_MODULE_0__.setBlockTracking)(-1, true), (_cache[6] = ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($props.group.fields, function (item, index) {
+  }, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($options.filteredFields, function (item, index) {
     return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)((0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)('form-' + item.component), {
       key: item.key || index,
       "resource-name": _ctx.resourceName,
@@ -1496,10 +1518,10 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
       mode: _ctx.mode,
       "show-help-text": item.helpText != null,
       "class": (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)({
-        'remove-bottom-border': index == $props.group.fields.length - 1
+        'remove-bottom-border': index == $options.filteredFields.length - 1
       })
     }, null, 8 /* PROPS */, ["resource-name", "resource-id", "field", "errors", "mode", "show-help-text", "class"]);
-  }), 128 /* KEYED_FRAGMENT */))).cacheIndex = 6, (0,vue__WEBPACK_IMPORTED_MODULE_0__.setBlockTracking)(1), _cache[6])], 2 /* CLASS */)])], 8 /* PROPS */, _hoisted_1);
+  }), 128 /* KEYED_FRAGMENT */))], 2 /* CLASS */)])], 8 /* PROPS */, _hoisted_1);
 }
 
 /***/ }),
@@ -1754,7 +1776,9 @@ var Group = /*#__PURE__*/function () {
     value: function values() {
       var formData = new FormData();
       for (var i = 0; i < this.fields.length; i++) {
-        this.fields[i].fill(formData);
+        if (typeof this.fields[i].fill === 'function') {
+          this.fields[i].fill(formData);
+        }
       }
       return formData;
     }
@@ -1909,7 +1933,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.group-control:focus {\n  outline: none;\n}\n.group-control:hover {\n  color: rgb(var(--colors-primary-400));\n}\n.confirm-message {\n  position: absolute;\n  overflow: visible;\n  right: 38px;\n  bottom: 0;\n  width: auto;\n  border-radius: 4px;\n  padding: 6px 7px;\n  border: 1px solid #b7cad6;\n  background-color: var(--20);\n  white-space: nowrap;\n}\n[dir=\"rtl\"] .confirm-message {\n  right: auto;\n  left: 35px;\n}\n.confirm-message .text-danger {\n  color: #ee3f22;\n}\n.rounded-l {\n  border-top-left-radius: 0.25rem;\n  /* 4px */\n  border-bottom-left-radius: 0.25rem;\n  /* 4px */\n}\n.rounded-t-lg {\n  border-top-right-radius: 0.5rem;\n  /* 8px */\n  border-top-left-radius: 0.5rem;\n  /* 8px */\n}\n.rounded-b-lg {\n  border-bottom-left-radius: 0.5rem;\n  /* 8px */\n  border-bottom-right-radius: 0.5rem;\n  /* 8px */\n}\n.box-content {\n  box-sizing: content-box;\n}\n.grow {\n  flex-grow: 1;\n}\n.grow-0 {\n  flex-grow: 0;\n}\n.shrink {\n  flex-shrink: 1;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.group-control:focus {\r\n  outline: none;\n}\n.group-control:hover {\r\n  color: rgb(var(--colors-primary-400));\n}\n.confirm-message {\r\n  position: absolute;\r\n  overflow: visible;\r\n  right: 38px;\r\n  bottom: 0;\r\n  width: auto;\r\n  border-radius: 4px;\r\n  padding: 6px 7px;\r\n  border: 1px solid #b7cad6;\r\n  background-color: var(--20);\r\n  white-space: nowrap;\n}\n[dir=\"rtl\"] .confirm-message {\r\n  right: auto;\r\n  left: 35px;\n}\n.confirm-message .text-danger {\r\n  color: #ee3f22;\n}\n.rounded-l {\r\n  border-top-left-radius: 0.25rem;\r\n  /* 4px */\r\n  border-bottom-left-radius: 0.25rem;\r\n  /* 4px */\n}\n.rounded-t-lg {\r\n  border-top-right-radius: 0.5rem;\r\n  /* 8px */\r\n  border-top-left-radius: 0.5rem;\r\n  /* 8px */\n}\n.rounded-b-lg {\r\n  border-bottom-left-radius: 0.5rem;\r\n  /* 8px */\r\n  border-bottom-right-radius: 0.5rem;\r\n  /* 8px */\n}\n.box-content {\r\n  box-sizing: content-box;\n}\n.grow {\r\n  flex-grow: 1;\n}\n.grow-0 {\r\n  flex-grow: 0;\n}\n.shrink {\r\n  flex-shrink: 1;\n}\n.shrink-0 {\r\n  flex-shrink: 0;\n}\r\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
