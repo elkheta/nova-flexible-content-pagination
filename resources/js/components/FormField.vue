@@ -42,8 +42,9 @@
             @move-up="moveUp(group.key)" 
             @move-down="moveDown(group.key)" 
             @remove="remove(group.key)" 
-            :draggable="!showLoadMoreButton" 
-            :moveDownStatus="!(showLoadMoreButton && groupIndex === visibleGroups.length - 1) && (groupIndex !== filteredGroupsFull.length - 1)"
+            :draggable="canDrag()" 
+            :moveDownStatus="canMoveDown(groupIndex, visibleGroups.length)"
+            :moveUpStatus="canMoveUp()"
             />
         
         <!-- Load more button -->
@@ -65,7 +66,7 @@
             v-for="(group, groupIndex) in lastGroups"
             :key="'last-' + group.key" 
             :dusk="field.attribute + '-' + (filteredGroupsFull.length - initialGroupsCount) + groupIndex" 
-            :draggable="!showLoadMoreButton" 
+            :draggable="canDrag()" 
             :field="field" 
             :group="group" 
             :deleteLoading="deleteLoading"
@@ -75,8 +76,8 @@
             :errors="errors" 
             :mode="mode"
             :order="order"
-            :moveUpStatus="!showLoadMoreButton || groupIndex !== 0"   
-            :moveDownStatus="!showLoadMoreButton || (lastGroups.length > 1 && groupIndex !== lastGroups.length - 1)" 
+            :moveUpStatus="canMoveUpLastGroup(groupIndex)"   
+            :moveDownStatus="canMoveDownLastGroup(groupIndex)" 
             @move-up="moveUp(group.key)" 
             @move-down="moveDown(group.key)"  
             @remove="remove(group.key)" 
@@ -135,6 +136,9 @@ export default {
   },
 
   computed: {
+    isSearchable() {
+      return !(!this.selectedTerm && this.searchName === '');
+    },
     layouts() {
       return this.field.layouts || false;
     },
@@ -247,6 +251,92 @@ export default {
   },
 
   methods: {
+    /**
+     * Determine if a group can be moved up based on its position and search state
+     */
+    canMoveUp() {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+      
+      return true;
+    },
+    
+    /**
+     * Determine if a group can be moved down based on its position and search state
+     */
+    canMoveDown(groupIndex, totalLength) {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+      
+      // Disable if it's the last item in the visible groups and load more button is shown
+      if (this.showLoadMoreButton && groupIndex === totalLength - 1) {
+        return false;
+      }
+      
+      // Disable if it's the last item in the filtered groups
+      if (groupIndex === this.filteredGroupsFull.length - 1) {
+        return false;
+      }
+      
+      return true;
+    },
+    
+    /**
+     * Determine if a last group can be moved down based on its position
+     */
+    canMoveDownLastGroup(groupIndex) {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+      
+      // If load more button is not shown, always allow movement
+      if (!this.showLoadMoreButton) {
+        return true;
+      }
+      
+      // If load more button is shown, only allow if not the last item and there are multiple items
+      return this.lastGroups.length > 1 && groupIndex !== this.lastGroups.length - 1;
+    },
+    
+    /**
+     * Determine if a last group can be moved up based on its position and search state
+     */
+    canMoveUpLastGroup(groupIndex) {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+      
+      // Disable if it's the first item and load more button is shown
+      if (this.showLoadMoreButton && groupIndex === 0) {
+        return false;
+      }
+      
+      return true;
+    },
+    
+    /**
+     * Determine if groups can be dragged based on search/filter state and load more button
+     */
+    canDrag() {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+      
+      // Disable if load more button is shown
+      if (this.showLoadMoreButton) {
+        return false;
+      }
+      
+      return true;
+    },
+    
     paginate() {
       return this.field.paginate;
     },

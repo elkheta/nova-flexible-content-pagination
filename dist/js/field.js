@@ -206,6 +206,9 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     };
   },
   computed: {
+    isSearchable: function isSearchable() {
+      return !(!this.selectedTerm && this.searchName === '');
+    },
     layouts: function layouts() {
       return this.field.layouts || false;
     },
@@ -311,6 +314,83 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     }
   },
   methods: {
+    /**
+     * Determine if a group can be moved up based on its position and search state
+     */
+    canMoveUp: function canMoveUp() {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+      return true;
+    },
+    /**
+     * Determine if a group can be moved down based on its position and search state
+     */
+    canMoveDown: function canMoveDown(groupIndex, totalLength) {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+
+      // Disable if it's the last item in the visible groups and load more button is shown
+      if (this.showLoadMoreButton && groupIndex === totalLength - 1) {
+        return false;
+      }
+
+      // Disable if it's the last item in the filtered groups
+      if (groupIndex === this.filteredGroupsFull.length - 1) {
+        return false;
+      }
+      return true;
+    },
+    /**
+     * Determine if a last group can be moved down based on its position
+     */
+    canMoveDownLastGroup: function canMoveDownLastGroup(groupIndex) {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+
+      // If load more button is not shown, always allow movement
+      if (!this.showLoadMoreButton) {
+        return true;
+      }
+
+      // If load more button is shown, only allow if not the last item and there are multiple items
+      return this.lastGroups.length > 1 && groupIndex !== this.lastGroups.length - 1;
+    },
+    /**
+     * Determine if a last group can be moved up based on its position and search state
+     */
+    canMoveUpLastGroup: function canMoveUpLastGroup(groupIndex) {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+
+      // Disable if it's the first item and load more button is shown
+      if (this.showLoadMoreButton && groupIndex === 0) {
+        return false;
+      }
+      return true;
+    },
+    /**
+     * Determine if groups can be dragged based on search/filter state and load more button
+     */
+    canDrag: function canDrag() {
+      // Disable if search/filter is active
+      if (this.isSearchable) {
+        return false;
+      }
+
+      // Disable if load more button is shown
+      if (this.showLoadMoreButton) {
+        return false;
+      }
+      return true;
+    },
     paginate: function paginate() {
       return this.field.paginate;
     },
@@ -1310,9 +1390,10 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           onRemove: function onRemove($event) {
             return $options.remove(group.key);
           },
-          draggable: !$options.showLoadMoreButton,
-          moveDownStatus: !($options.showLoadMoreButton && groupIndex === $options.visibleGroups.length - 1) && groupIndex !== $options.filteredGroupsFull.length - 1
-        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "deleteLoading", "resource-name", "resource-id", "errors", "mode", "order", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus"]);
+          draggable: $options.canDrag(),
+          moveDownStatus: $options.canMoveDown(groupIndex, $options.visibleGroups.length),
+          moveUpStatus: $options.canMoveUp()
+        }, null, 8 /* PROPS */, ["dusk", "field", "group", "index", "deleteLoading", "resource-name", "resource-id", "errors", "mode", "order", "onMoveUp", "onMoveDown", "onRemove", "draggable", "moveDownStatus", "moveUpStatus"]);
       }), 128 /* KEYED_FRAGMENT */)), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" Load more button "), $data.isLoading ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_6, _cache[6] || (_cache[6] = [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", {
         "class": "spinner-grow text-primary",
         role: "status"
@@ -1334,7 +1415,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
         return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)(_component_form_nova_flexible_content_group, {
           key: 'last-' + group.key,
           dusk: _ctx.field.attribute + '-' + ($options.filteredGroupsFull.length - $data.initialGroupsCount) + groupIndex,
-          draggable: !$options.showLoadMoreButton,
+          draggable: $options.canDrag(),
           field: _ctx.field,
           group: group,
           deleteLoading: $data.deleteLoading,
@@ -1344,8 +1425,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           errors: _ctx.errors,
           mode: _ctx.mode,
           order: $data.order,
-          moveUpStatus: !$options.showLoadMoreButton || groupIndex !== 0,
-          moveDownStatus: !$options.showLoadMoreButton || $options.lastGroups.length > 1 && groupIndex !== $options.lastGroups.length - 1,
+          moveUpStatus: $options.canMoveUpLastGroup(groupIndex),
+          moveDownStatus: $options.canMoveDownLastGroup(groupIndex),
           onMoveUp: function onMoveUp($event) {
             return $options.moveUp(group.key);
           },
